@@ -35,12 +35,24 @@
  */
 package net.sourceforge.plantuml.skin;
 
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+
+import net.sourceforge.plantuml.jaws.JawsWarning;
 
 public class Pragma {
 
 	private final Map<String, String> values = new LinkedHashMap<String, String>();
+	private final Set<JawsWarning> warnings = EnumSet.noneOf(JawsWarning.class);
+
+	private Pragma() {
+	}
+
+	public static Pragma createEmpty() {
+		return new Pragma();
+	}
 
 	public void define(String name, String value) {
 		values.put(name, value);
@@ -94,4 +106,17 @@ public class Pragma {
 		return !isFalse(getValue("useintermediatepackages"));
 	}
 
+	public boolean legacyReplaceBackslashNByNewline() {
+		return true;
+	}
+
+	public void addWarning(JawsWarning warning) {
+		this.warnings.add(warning);
+	}
+
+	public Set<JawsWarning> warnings() {
+		if (isTrue(getValue("warning")))
+			return this.warnings;
+		return null;
+	}
 }

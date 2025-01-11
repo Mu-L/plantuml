@@ -70,6 +70,8 @@ public class EbnfExpression implements TextBlockable {
 		while (true) {
 			final char ch = it.peek(0);
 			if (Character.isWhitespace(ch)) {
+			} else if (ch == '-') {
+				tokens.add(new Token(Symbol.NOT, null));
 			} else if (isLetterOrDigit(ch)) {
 				final String litteral = readLitteral(it);
 				tokens.add(new Token(Symbol.LITTERAL, litteral));
@@ -170,14 +172,14 @@ public class EbnfExpression implements TextBlockable {
 	private TextBlock getNoteAbove(ISkinParam skinParam) {
 		if (commentAbove == null)
 			return null;
-		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(commentAbove), skinParam, SName.ebnf);
+		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(skinParam.getPragma(), commentAbove), skinParam, SName.ebnf);
 		return note;
 	}
 
 	private TextBlock getNoteBelow(ISkinParam skinParam) {
 		if (commentBelow == null)
 			return null;
-		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(commentBelow), skinParam, SName.ebnf);
+		final FloatingNote note = FloatingNote.create(Display.getWithNewlines(skinParam.getPragma(), commentBelow), skinParam, SName.ebnf);
 		return note;
 	}
 
@@ -198,6 +200,8 @@ public class EbnfExpression implements TextBlockable {
 				engine.concatenation();
 			else if (element.getSymbol() == Symbol.OPTIONAL)
 				engine.optional();
+			else if (element.getSymbol() == Symbol.NOT)
+				engine.not();
 			else if (element.getSymbol() == Symbol.REPETITION_ZERO_OR_MORE)
 				engine.repetitionZeroOrMore(isCompact);
 			else if (element.getSymbol() == Symbol.REPETITION_ONE_OR_MORE)

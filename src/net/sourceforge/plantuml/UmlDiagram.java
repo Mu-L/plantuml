@@ -128,6 +128,7 @@ public abstract class UmlDiagram extends TitledDiagram implements Diagram, Annot
 			throws IOException {
 
 		fileFormatOption = fileFormatOption.withTikzFontDistortion(getSkinParam().getTikzFontDistortion());
+		fileFormatOption.getTikzFontDistortion().updateFromPragma(getPragma());
 
 		// ::comment when __CORE__
 		if (fileFormatOption.getFileFormat() == FileFormat.PDF)
@@ -141,14 +142,16 @@ public abstract class UmlDiagram extends TitledDiagram implements Diagram, Annot
 		} catch (NoStyleAvailableException e) {
 			// Logme.error(e);
 			exportDiagramError(os, e, fileFormatOption, null);
+			return ImageDataSimple.error(e);
 		} catch (UnparsableGraphvizException e) {
 			Logme.error(e);
 			exportDiagramError(os, e.getCause(), fileFormatOption, e.getGraphvizVersion());
+			return ImageDataSimple.error(e);
 		} catch (Throwable e) {
 			// Logme.error(e);
 			exportDiagramError(os, e, fileFormatOption, null);
+			return ImageDataSimple.error(e);
 		}
-		return ImageDataSimple.error();
 	}
 
 	private void exportDiagramError(OutputStream os, Throwable exception, FileFormatOption fileFormat,

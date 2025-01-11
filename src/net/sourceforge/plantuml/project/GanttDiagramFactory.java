@@ -51,6 +51,7 @@ import net.sourceforge.plantuml.project.command.CommandGanttArrow;
 import net.sourceforge.plantuml.project.command.CommandGanttArrow2;
 import net.sourceforge.plantuml.project.command.CommandGroupEnd;
 import net.sourceforge.plantuml.project.command.CommandGroupStart;
+import net.sourceforge.plantuml.project.command.CommandHideClosed;
 import net.sourceforge.plantuml.project.command.CommandHideResourceFootbox;
 import net.sourceforge.plantuml.project.command.CommandHideResourceName;
 import net.sourceforge.plantuml.project.command.CommandLabelOnColumn;
@@ -74,6 +75,7 @@ import net.sourceforge.plantuml.project.lang.SubjectResource;
 import net.sourceforge.plantuml.project.lang.SubjectSeparator;
 import net.sourceforge.plantuml.project.lang.SubjectTask;
 import net.sourceforge.plantuml.project.lang.SubjectToday;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.style.CommandStyleImport;
 import net.sourceforge.plantuml.style.CommandStyleMultilinesCSS;
 
@@ -116,6 +118,7 @@ public class GanttDiagramFactory extends PSystemCommandFactory {
 		cmds.add(new CommandLabelOnColumn());
 		cmds.add(new CommandHideResourceName());
 		cmds.add(new CommandHideResourceFootbox());
+		cmds.add(new CommandHideClosed());
 		cmds.add(new CommandTaskCompleteDefault());
 	}
 
@@ -146,8 +149,14 @@ public class GanttDiagramFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public GanttDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
+	public GanttDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinMap) {
 		return new GanttDiagram(source);
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.GANTT;
+	}
+
 
 }

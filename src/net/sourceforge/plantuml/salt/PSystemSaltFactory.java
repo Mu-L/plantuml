@@ -43,6 +43,7 @@ import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class PSystemSaltFactory extends PSystemCommandFactory {
 
@@ -61,12 +62,18 @@ public class PSystemSaltFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public PSystemSalt createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
+	public PSystemSalt createEmptyDiagram(UmlSource source, Map<String, String> skinMap) {
 		final PSystemSalt result = new PSystemSalt(source);
 		if (getDiagramType() == DiagramType.SALT) {
 			result.setIamSalt(true);
 		}
 		return result;
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.SALT;
+	}
+
 
 }

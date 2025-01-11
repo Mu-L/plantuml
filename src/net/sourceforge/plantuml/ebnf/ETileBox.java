@@ -185,8 +185,8 @@ public class ETileBox extends ETile {
 		}
 
 		if (posxBox > 0) {
-			drawHlineDirected(ug, getH1(stringBounder), 0, posxBox, .5);
-			drawHlineDirected(ug, getH1(stringBounder), posxBox + dimBox.getWidth(), dim.getWidth(), .5);
+			drawHlineDirected(ug, getH1(stringBounder), 0, posxBox, .5, 25);
+			drawHlineDirected(ug, getH1(stringBounder), posxBox + dimBox.getWidth(), dim.getWidth(), .5, 25);
 		}
 
 	}
@@ -195,7 +195,7 @@ public class ETileBox extends ETile {
 		if (commentAbove == null)
 			return TextBlockUtils.EMPTY_TEXT_BLOCK;
 
-		final FloatingNote note = FloatingNote.createOpale(Display.getWithNewlines(commentAbove), skinParam,
+		final FloatingNote note = FloatingNote.createOpale(Display.getWithNewlines(skinParam.getPragma(), commentAbove), skinParam,
 				SName.ebnf);
 		final XDimension2D dim = note.calculateDimension(stringBounder);
 		final double pos = dim.getWidth() * .5;
@@ -209,7 +209,7 @@ public class ETileBox extends ETile {
 		if (commentBelow == null)
 			return TextBlockUtils.EMPTY_TEXT_BLOCK;
 
-		final FloatingNote note = FloatingNote.createOpale(Display.getWithNewlines(commentBelow), skinParam,
+		final FloatingNote note = FloatingNote.createOpale(Display.getWithNewlines(skinParam.getPragma(), commentBelow), skinParam,
 				SName.ebnf);
 		final XDimension2D dim = note.calculateDimension(stringBounder);
 		final double pos = dim.getWidth() * .5;

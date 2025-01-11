@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import net.sourceforge.plantuml.code.AsciiEncoder;
@@ -53,12 +54,12 @@ import net.sourceforge.plantuml.code.Transcoder;
 import net.sourceforge.plantuml.code.TranscoderUtil;
 import net.sourceforge.plantuml.core.Diagram;
 import net.sourceforge.plantuml.error.PSystemErrorPreprocessor;
+import net.sourceforge.plantuml.jaws.Jaws;
 import net.sourceforge.plantuml.log.Logme;
 import net.sourceforge.plantuml.preproc.Defines;
 import net.sourceforge.plantuml.preproc.FileWithSuffix;
-import net.sourceforge.plantuml.preproc2.PreprocessorModeSet;
+import net.sourceforge.plantuml.preproc.ReadLineWithYamlHeader;
 import net.sourceforge.plantuml.regex.Matcher2;
-import net.sourceforge.plantuml.style.ISkinSimple;
 import net.sourceforge.plantuml.text.BackSlash;
 import net.sourceforge.plantuml.text.StringLocated;
 import net.sourceforge.plantuml.tim.TimLoader;
@@ -74,7 +75,7 @@ public class BlockUml {
 	private List<StringLocated> debug;
 	private Diagram system;
 	private final Defines localDefines;
-	private final ISkinSimple skinParam;
+	private final Map<String, String> skinMap;
 	private final Set<FileWithSuffix> included = new HashSet<>();
 
 	public Set<FileWithSuffix> getIncluded() {
@@ -126,26 +127,24 @@ public class BlockUml {
 	 *             are using this?
 	 */
 	@Deprecated
-	public BlockUml(List<StringLocated> strings, Defines defines, ISkinSimple skinParam, PreprocessorModeSet mode) {
-		this(strings, defines, skinParam, mode, charsetOrDefault(mode.getCharset()));
+	public BlockUml(List<StringLocated> strings, Defines defines, Map<String, String> skinMap,
+			DefinitionsContainer definitions) {
+		this(strings, defines, skinMap, definitions, charsetOrDefault(definitions.getCharset()));
 	}
 
-	public BlockUml(List<StringLocated> strings, Defines defines, ISkinSimple skinParam, PreprocessorModeSet mode,
-			Charset charset) {
-		this.rawSource = new ArrayList<>(strings);
+	public BlockUml(List<StringLocated> strings, Defines defines, Map<String, String> skinMap,
+			DefinitionsContainer definitions, Charset charset) {
+		this.rawSource = ReadLineWithYamlHeader.removeYamlHeader(strings);
 		this.localDefines = defines;
-		this.skinParam = skinParam;
-		final String s0 = strings.get(0).getTrimmed().getString();
-		if (StartUtils.startsWithSymbolAnd("start", s0) == false)
-			throw new IllegalArgumentException();
+		this.skinMap = skinMap;
 
-		if (mode == null) {
-			this.data = new ArrayList<>(strings);
+		if (definitions == null) {
+			this.data = new ArrayList<>(this.rawSource);
 		} else {
-			final TimLoader timLoader = new TimLoader(mode.getImportedFiles(), defines, charset,
-					(DefinitionsContainer) mode);
-			this.included.addAll(timLoader.load(strings));
-			this.data = timLoader.getResultList();
+			final TimLoader timLoader = new TimLoader(definitions.getImportedFiles(), defines, charset, definitions,
+					this.rawSource.get(0));
+			this.included.addAll(timLoader.load(this.rawSource));
+			this.data = Jaws.expandsJawsForPreprocessor(timLoader.getResultList());
 			this.debug = timLoader.getDebug();
 			this.preprocessorError = timLoader.isPreprocessorError();
 		}
@@ -185,8 +184,7 @@ public class BlockUml {
 			if (preprocessorError)
 				system = new PSystemErrorPreprocessor(data, debug);
 			else
-				system = new PSystemBuilder().createPSystem(data, rawSource,
-						skinParam == null ? Collections.<String, String>emptyMap() : skinParam.values());
+				system = new PSystemBuilder().createPSystem(data, rawSource, skinMap);
 		}
 		return system;
 	}

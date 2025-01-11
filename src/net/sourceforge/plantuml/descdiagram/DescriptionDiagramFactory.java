@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 
 import net.sourceforge.plantuml.classdiagram.command.CommandHideShow2;
-import net.sourceforge.plantuml.classdiagram.command.CommandNamespaceSeparator;
 import net.sourceforge.plantuml.classdiagram.command.CommandRemoveRestore;
 import net.sourceforge.plantuml.classdiagram.command.CommandUrl;
 import net.sourceforge.plantuml.command.Command;
@@ -48,6 +47,7 @@ import net.sourceforge.plantuml.command.CommandFootboxIgnored;
 import net.sourceforge.plantuml.command.CommandRankDir;
 import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.note.CommandFactoryNote;
 import net.sourceforge.plantuml.command.note.CommandFactoryNoteOnEntity;
 import net.sourceforge.plantuml.command.note.CommandFactoryNoteOnLink;
@@ -65,12 +65,13 @@ import net.sourceforge.plantuml.objectdiagram.command.CommandCreateJsonSingleLin
 import net.sourceforge.plantuml.objectdiagram.command.CommandCreateMap;
 import net.sourceforge.plantuml.regex.RegexLeaf;
 import net.sourceforge.plantuml.regex.RegexOr;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class DescriptionDiagramFactory extends PSystemCommandFactory {
 
 	@Override
-	public DescriptionDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new DescriptionDiagram(source, skinParam);
+	public DescriptionDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinMap) {
+		return new DescriptionDiagram(source, skinMap);
 	}
 
 	@Override
@@ -91,12 +92,12 @@ public class DescriptionDiagramFactory extends PSystemCommandFactory {
 		final CommandFactoryNote factoryNoteCommand = new CommandFactoryNote();
 		cmds.add(factoryNoteCommand.createMultiLine(false));
 
-		final CommandFactoryNoteOnLink factoryNoteOnLinkCommand = new CommandFactoryNoteOnLink();
+		final CommandFactoryNoteOnLink factoryNoteOnLinkCommand = new CommandFactoryNoteOnLink(ParserPass.ONE);
 		cmds.add(factoryNoteOnLinkCommand.createSingleLine());
 		cmds.add(factoryNoteOnLinkCommand.createMultiLine(false));
 
 		final CommandFactoryNoteOnEntity factoryNoteOnEntityCommand = new CommandFactoryNoteOnEntity("desc",
-				new RegexOr("ENTITY", //
+				new RegexOr("CODE", //
 						new RegexLeaf("[%pLN_.]+"), //
 						new RegexLeaf("\\(\\)[%s]*[%pLN_.]+"), //
 						new RegexLeaf("\\(\\)[%s]*[%g][^%g]+[%g]"), //
@@ -104,7 +105,7 @@ public class DescriptionDiagramFactory extends PSystemCommandFactory {
 						new RegexLeaf("\\((?!\\*\\))[^\\)]+\\)"), //
 						new RegexLeaf(":[^:]+:"), //
 						new RegexLeaf("[%g][^%g]+[%g]") //
-				));
+				), ParserPass.ONE);
 		cmds.add(factoryNoteOnEntityCommand.createSingleLine());
 
 		cmds.add(factoryNoteCommand.createSingleLine());
@@ -126,5 +127,11 @@ public class DescriptionDiagramFactory extends PSystemCommandFactory {
 		cmds.add(new CommandArchimateMultilines());
 		cmds.add(new CommandCreateDomain());
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.DESCRIPTION;
+	}
+
 
 }

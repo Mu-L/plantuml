@@ -62,7 +62,7 @@ public class YamlDiagramFactory extends PSystemAbstractFactory {
 	}
 
 	@Override
-	public Diagram createSystem(UmlSource source, Map<String, String> skinParam) {
+	public Diagram createSystem(UmlSource source, Map<String, String> skinMap) {
 		final List<Highlighted> highlighted = new ArrayList<>();
 		JsonValue yaml = null;
 		StyleExtractor styleExtractor = null;
@@ -95,10 +95,16 @@ public class YamlDiagramFactory extends PSystemAbstractFactory {
 			}
 			final String title = styleExtractor.getTitle();
 			if (title != null)
-				result.setTitle(DisplayPositioned.single(Display.getWithNewlines(title), HorizontalAlignment.CENTER,
+				result.setTitle(DisplayPositioned.single(Display.getWithNewlines(result.getPragma(), title), HorizontalAlignment.CENTER,
 						VerticalAlignment.CENTER));
 		}
 		return result;
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.YAML;
+	}
+
 
 }

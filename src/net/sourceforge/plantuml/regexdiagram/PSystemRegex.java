@@ -56,8 +56,11 @@ import net.sourceforge.plantuml.ebnf.ETileLookAheadOrBehind;
 import net.sourceforge.plantuml.ebnf.ETileNamedGroup;
 import net.sourceforge.plantuml.ebnf.ETileOneOrMore;
 import net.sourceforge.plantuml.ebnf.ETileOptional;
+import net.sourceforge.plantuml.ebnf.ETileRegexGroup;
+import net.sourceforge.plantuml.ebnf.ETileRegexGroupAllBut;
 import net.sourceforge.plantuml.ebnf.ETileZeroOrMore;
 import net.sourceforge.plantuml.ebnf.Symbol;
+import net.sourceforge.plantuml.jsondiagram.StyleExtractor;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.HColorSet;
 import net.sourceforge.plantuml.klimt.color.HColors;
@@ -72,6 +75,7 @@ import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.Style;
+import net.sourceforge.plantuml.style.parser.StyleParsingException;
 import net.sourceforge.plantuml.utils.BlocLines;
 import net.sourceforge.plantuml.utils.CharInspector;
 
@@ -79,7 +83,15 @@ public class PSystemRegex extends TitledDiagram {
 
 	public PSystemRegex(UmlSource source) {
 		super(source, UmlDiagramType.REGEX, null);
+		final StyleExtractor styleExtractor = new StyleExtractor(source.iterator2());
+
 		final ISkinParam skinParam = getSkinParam();
+		try {
+			styleExtractor.applyStyles(skinParam);
+		} catch (StyleParsingException e) {
+			e.printStackTrace();
+		}
+
 		this.style = ETile.getStyleSignature().getMergedStyle(skinParam.getCurrentStyleBuilder());
 		this.fontConfiguration = style.getFontConfiguration(skinParam.getIHtmlColorSet());
 		this.colorSet = skinParam.getIHtmlColorSet();
@@ -96,28 +108,6 @@ public class PSystemRegex extends TitledDiagram {
 	private final HColorSet colorSet;
 	private final HColor lineColor;
 
-//	public CommandExecutionResult addBlocLines(BlocLines blines, String commentAbove, String commentBelow) {
-//		final boolean isCompact = getPragma().isDefine("compact");
-//		final CharIterator it = new CharIteratorImpl(blines);
-//		final EbnfExpression tmp1 = EbnfExpression.create(it, isCompact, commentAbove, commentBelow);
-//		if (tmp1.isEmpty())
-//			return CommandExecutionResult.error("Unparsable expression");
-//		expressions.add(tmp1);
-//		return CommandExecutionResult.ok();
-//
-//	}
-//
-//	public CommandExecutionResult addNote(final Display note, Colors colors) {
-//		expressions.add(new TextBlockable() {
-//			@Override
-//			public TextBlock getUDrawable(ISkinParam skinParam) {
-//				final FloatingNote f = FloatingNote.create(note, skinParam, SName.ebnf);
-//				return TextBlockUtils.withMargin(f, 0, 0, 5, 15);
-//			}
-//		});
-//		return CommandExecutionResult.ok();
-//	}
-
 	@Override
 	protected ImageData exportDiagramNow(OutputStream os, int index, FileFormatOption fileFormatOption)
 			throws IOException {
@@ -133,7 +123,7 @@ public class PSystemRegex extends TitledDiagram {
 
 			@Override
 			public void drawU(UGraphic ug) {
-				peekFirst.drawU(ug.apply(HColors.BLACK));
+				peekFirst.drawU(ug.apply(lineColor));
 			}
 
 			@Override
@@ -158,11 +148,11 @@ public class PSystemRegex extends TitledDiagram {
 			// System.err.println("result=" + result);
 			for (ReToken token : result)
 				if (token.getType() == ReTokenType.SIMPLE_CHAR)
-					push(token, Symbol.TERMINAL_STRING1);
+					pushEtileBox(token, Symbol.TERMINAL_STRING1);
 				else if (token.getType() == ReTokenType.ESCAPED_CHAR)
-					push(token, Symbol.TERMINAL_STRING1);
+					pushEtileBox(token, Symbol.TERMINAL_STRING1);
 				else if (token.getType() == ReTokenType.GROUP)
-					push(token, Symbol.SPECIAL_SEQUENCE);
+					pushRegexGroup(token);
 				else if (token.getType() == ReTokenType.LOOK_AHEAD)
 					lookAheadOrBehind(token.getData());
 				else if (token.getType() == ReTokenType.LOOK_BEHIND)
@@ -170,9 +160,9 @@ public class PSystemRegex extends TitledDiagram {
 				else if (token.getType() == ReTokenType.NAMED_GROUP)
 					namedGroup(token.getData());
 				else if (token.getType() == ReTokenType.CLASS)
-					push(token, Symbol.LITTERAL);
+					pushEtileBox(token, Symbol.LITTERAL);
 				else if (token.getType() == ReTokenType.ANCHOR)
-					push(token, Symbol.LITTERAL);
+					pushEtileBox(token, Symbol.LITTERAL);
 				else if (token.getType() == ReTokenType.CONCATENATION_IMPLICIT)
 					concatenation();
 				else if (token.getType() == ReTokenType.ALTERNATIVE)
@@ -205,9 +195,16 @@ public class PSystemRegex extends TitledDiagram {
 		return result;
 	}
 
-	private void push(ReToken element, Symbol type) {
-		// final Symbol type = Symbol.LITTERAL;
+	private void pushEtileBox(ReToken element, Symbol type) {
 		stack.addFirst(new ETileBox(element.getData(), type, fontConfiguration, style, colorSet, getSkinParam()));
+	}
+
+	private void pushRegexGroup(ReToken element) {
+		final List<String> elements = new GroupSplitter().split(element.getData());
+		if (elements.get(0).equals("^"))
+			stack.addFirst(new ETileRegexGroupAllBut(elements, fontConfiguration, style, colorSet, getSkinParam()));
+		else
+			stack.addFirst(new ETileRegexGroup(elements, fontConfiguration, style, colorSet, getSkinParam()));
 	}
 
 	private void lookAheadOrBehind(String name) {

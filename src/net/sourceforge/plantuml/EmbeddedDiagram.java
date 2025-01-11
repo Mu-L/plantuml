@@ -40,8 +40,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import net.atmp.PixelImage;
 import net.sourceforge.plantuml.core.Diagram;
@@ -121,6 +123,9 @@ public class EmbeddedDiagram extends AbstractTextBlock implements Line, Atom {
 
 		if (s.equals(EMBEDDED_START + "chronology"))
 			return "chronology";
+
+		if (s.equals(EMBEDDED_START + "chen"))
+			return "chen";
 
 		return null;
 	}
@@ -228,7 +233,9 @@ public class EmbeddedDiagram extends AbstractTextBlock implements Line, Atom {
 	}
 
 	private Diagram getSystem() throws IOException, InterruptedException {
-		final BlockUml blockUml = new BlockUml(list, Defines.createEmpty(), skinParam, null, null);
+		final Map<String, String> skinMap = skinParam == null ? Collections.<String, String>emptyMap()
+				: skinParam.values();
+		final BlockUml blockUml = new BlockUml(list, Defines.createEmpty(), skinMap, null, null);
 		return blockUml.getDiagram();
 
 	}

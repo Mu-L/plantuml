@@ -105,11 +105,13 @@ public class SkinParam implements ISkinParam {
 	// private String skin = "debug.skin";
 	private String skin = "plantuml.skin";
 	private StyleBuilder styleBuilder;
+	private final Pragma pragma;
 
-	private SkinParam(UmlDiagramType type) {
+	private SkinParam(UmlDiagramType type, Pragma pragma) {
 		this.type = type;
+		this.pragma = pragma;
 	}
-
+	
 	@Override
 	public StyleBuilder getCurrentStyleBuilder() {
 		if (styleBuilder == null)
@@ -207,14 +209,8 @@ public class SkinParam implements ISkinParam {
 		paramsPendingForStyleMigration.clear();
 	}
 
-	public static SkinParam create(UmlDiagramType type) {
-		return new SkinParam(type);
-	}
-
-	public static SkinParam noShadowing(UmlDiagramType type) {
-		final SkinParam result = new SkinParam(type);
-		result.setParam("shadowing", "false");
-		return result;
+	public static SkinParam create(UmlDiagramType type, Pragma pragma) {
+		return new SkinParam(type, pragma);
 	}
 
 	private final Map<String, List<String>> cacheCleanForKey = new HashMap<String, List<String>>();
@@ -1232,6 +1228,11 @@ public class SkinParam implements ISkinParam {
 		if (strictUmlStyle())
 			return new ArrowsTriangle();
 		return new ArrowsRegular();
+	}
+
+	@Override
+	public final Pragma getPragma() {
+		return pragma;
 	}
 
 }

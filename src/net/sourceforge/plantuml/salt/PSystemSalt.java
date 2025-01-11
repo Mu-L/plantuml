@@ -52,6 +52,7 @@ import net.sourceforge.plantuml.api.ImageDataSimple;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandFactorySprite;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.core.DiagramDescription;
 import net.sourceforge.plantuml.core.ImageData;
 import net.sourceforge.plantuml.core.UmlSource;
@@ -87,6 +88,7 @@ import net.sourceforge.plantuml.salt.factory.ElementFactoryTextField;
 import net.sourceforge.plantuml.salt.factory.ElementFactoryTree;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.style.ClockwiseTopRightBottomLeft;
+import net.sourceforge.plantuml.text.StringLocated;
 import net.sourceforge.plantuml.utils.BlocLines;
 import net.sourceforge.plantuml.utils.Log;
 
@@ -106,7 +108,7 @@ public class PSystemSalt extends TitledDiagram implements WithSprite {
 	}
 
 	public void add(String s) {
-		data.add(s);
+		data.addAll(StringLocated.expandsJaws4(s));
 	}
 
 	@Override
@@ -182,7 +184,7 @@ public class PSystemSalt extends TitledDiagram implements WithSprite {
 					bloc = bloc.addString(s);
 				} while (s.equals("}") == false);
 				try {
-					final CommandExecutionResult cmdResult = cmd.execute(this, bloc);
+					final CommandExecutionResult cmdResult = cmd.execute(this, bloc, ParserPass.ONE);
 				} catch (NoSuchColorException e) {
 				}
 			} else {

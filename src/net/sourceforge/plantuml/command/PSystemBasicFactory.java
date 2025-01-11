@@ -67,7 +67,7 @@ public abstract class PSystemBasicFactory<P extends AbstractPSystem> extends PSy
 	}
 
 	@Override
-	final public Diagram createSystem(UmlSource source, Map<String, String> skinParam) {
+	final public Diagram createSystem(UmlSource source, Map<String, String> skinMap) {
 		source = source.removeInitialSkinparam();
 		final IteratorCounter2 it = source.iterator2();
 		final StringLocated startLine = it.next();
@@ -75,19 +75,19 @@ public abstract class PSystemBasicFactory<P extends AbstractPSystem> extends PSy
 		boolean first = true;
 		while (it.hasNext()) {
 			final StringLocated s = it.next();
-			if (first && s != null && isEmptyLine(s)) {
+			if (first && s != null && isEmptyLine(s))
 				continue;
-			}
+
 			first = false;
 			if (StartUtils.isArobaseEndDiagram(s.getString())) {
-				if (source.getTotalLineCount() == 2 && source.isStartDef() == false) {
+				if (source.getTotalLineCount() == 2 && source.isStartDef() == false)
 					return buildEmptyError(source, s.getLocation(), it.getTrace());
-				}
+
 				return system;
 			}
 			system = executeLine(source, system, s.getString());
 			if (system == null) {
-				final ErrorUml err = new ErrorUml(ErrorUmlType.SYNTAX_ERROR, "Syntax Error?", 0, s.getLocation());
+				final ErrorUml err = new ErrorUml(ErrorUmlType.SYNTAX_ERROR, "Syntax Error?", 0, s.getLocation(), getUmlDiagramType());
 				// return PSystemErrorUtils.buildV1(source, err, null);
 				return PSystemErrorUtils.buildV2(source, err, null, it.getTrace());
 			}

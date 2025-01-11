@@ -48,3 +48,45 @@ The subject contains succinct description of the change:
 * don't capitalize first letter
 * no dot (.) at the end
 
+
+### Gitmoji Usage
+
+[Gitmoji](https://gitmoji.dev/) provides a visual and expressive way to enhance commit messages by including emojis that represent the intent of the changes. It can be used alongside the Conventional Commit specification to add more clarity and fun to commit history.
+
+Each Gitmoji corresponds to a specific type of change:
+
+| Emoji   | Description                                | Conventional Commit Type   |
+|---------|--------------------------------------------|----------------------------|
+| ✨      | Introducing new features                   | `feat`                    |
+| 🐛      | Fixing a bug                               | `fix`                     |
+| 📝      | Writing or updating documentation          | `docs`                    |
+| 🎨      | Improving code structure/style             | `style`                   |
+| ♻️      | Refactoring code                           | `refactor`                |
+| ⚡️      | Improving performance                      | `perf`                    |
+| ✅      | Adding or updating tests                   | `test`                    |
+| 🔧      | Changes to configuration files             | `chore`                   |
+| 🚀      | Deployment-related changes                 | `chore`                   |
+| 🔒      | Fixing security issues                     | `fix`                     |
+| 🌱      | Adding or updating a seed file             | `chore`                   |
+| 🔥      | Removing code or files                     | `chore`                   |
+| 🚧      | Work in progress (WIP)                    | `chore`                   |
+| 📦️      | Add or update compiled files or packages  | `chore`                   |
+| ⚗️      | Perform experiments                       | `chore`                   |
+| 🎉      | Publish an official release               | `chore`                   |
+| 👷      | Add or update CI build system              | `chore`                   |
+| 📸      | Snapshot or preview release                | `chore`                   |
+| 🐾      | Small, incremental changes or tweaks           | `chore`               |
+
+
+#### Guidelines for Using Gitmoji
+- Place the corresponding emoji at the beginning of the **description** in the commit message header.
+- Ensure the emoji aligns with the type and purpose of the change.
+- Ensure a space is added immediately after the emoji.
+- Examples:
+  - `✨ feat: add user authentication module`
+  - `🐛 fix: resolve issue with null pointer exception`
+  - `🌱 chore: add initial database seed script`
+  - `📝 docs: update README with installation instructions`
+  - `🔥 chore: remove deprecated API endpoints`
+  
+Using Gitmoji is optional but can make commit messages more engaging and informative.

@@ -77,6 +77,11 @@ public class EbnfEngine {
 		stack.addFirst(new ETileOptional(arg1, skinParam));
 	}
 
+	public void not() {
+		final ETile arg1 = stack.removeFirst();
+		stack.addFirst(new ETileNot(arg1, fontConfiguration, style, colorSet, skinParam));
+	}
+
 	public void repetitionZeroOrMore(boolean isCompact) {
 		final ETile arg1 = stack.removeFirst();
 		if (isCompact)
@@ -122,7 +127,7 @@ public class EbnfEngine {
 			arg1.push(arg2);
 			stack.addFirst(arg1);
 		} else if (arg2 instanceof ETileConcatenation) {
-			arg2.push(arg1);
+			((ETileConcatenation) arg2).pushLast(arg1);
 			stack.addFirst(arg2);
 		} else {
 			final ETile concat = new ETileConcatenation();

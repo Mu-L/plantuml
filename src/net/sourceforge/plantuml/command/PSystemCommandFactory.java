@@ -38,6 +38,7 @@ package net.sourceforge.plantuml.command;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.sourceforge.plantuml.AbstractPSystem;
 import net.sourceforge.plantuml.EmbeddedDiagram;
@@ -60,7 +61,7 @@ public abstract class PSystemCommandFactory extends PSystemAbstractFactory {
 
 	protected abstract void initCommandsList(List<Command> cmds);
 
-	public abstract AbstractPSystem createEmptyDiagram(UmlSource source, Map<String, String> skinParam);
+	public abstract AbstractPSystem createEmptyDiagram(UmlSource source, Map<String, String> skinMap);
 
 	protected PSystemCommandFactory() {
 		this(DiagramType.UML);
@@ -71,8 +72,8 @@ public abstract class PSystemCommandFactory extends PSystemAbstractFactory {
 	}
 
 	@Override
-	final public Diagram createSystem(UmlSource source, Map<String, String> skinParam) {
-		final IteratorCounter2 it = source.iterator2();
+	final public Diagram createSystem(UmlSource source, Map<String, String> skinMap) {
+		IteratorCounter2 it = source.iterator2();
 		final StringLocated startLine = it.next();
 		if (StartUtils.isArobaseStartDiagram(startLine.getString()) == false)
 			throw new UnsupportedOperationException();
@@ -83,50 +84,65 @@ public abstract class PSystemCommandFactory extends PSystemAbstractFactory {
 
 			return buildEmptyError(source, startLine.getLocation(), it.getTrace());
 		}
-		AbstractPSystem sys = createEmptyDiagram(source, skinParam);
+		AbstractPSystem sys = createEmptyDiagram(source, skinMap);
 
-		while (it.hasNext()) {
-			if (StartUtils.isArobaseEndDiagram(it.peek().getString())) {
-				if (sys == null)
-					return null;
+		final Set<ParserPass> requiredPass = sys.getRequiredPass();
 
-				final String err = sys.checkFinalError();
-				if (err != null) {
-					final LineLocation location = it.next().getLocation();
-					return buildExecutionError(source, err, location, it.getTrace());
+		for (ParserPass pass : requiredPass) {
+			sys.startingPass(pass);
+			while (it.hasNext()) {
+				if (StartUtils.isArobaseEndDiagram(it.peek().getString())) {
+					it = source.iterator2();
+					it.next();
+					// For next pass
+					break;
 				}
-				if (source.getTotalLineCount() == 2) {
-					final LineLocation location = it.next().getLocation();
-					return buildEmptyError(source, location, it.getTrace());
-				}
-				sys.makeDiagramReady();
-				if (sys.isOk() == false)
-					return null;
-
-				return sys;
+				sys = executeFewLines(sys, source, it, pass);
+				if (sys instanceof PSystemError)
+					return sys;
 			}
-			sys = executeFewLines(sys, source, it);
-			if (sys instanceof PSystemError)
-				return sys;
-
 		}
-		return sys;
+		return finalizeDiagram(sys, source, it);
 
 	}
 
-	private AbstractPSystem executeFewLines(AbstractPSystem sys, UmlSource source, final IteratorCounter2 it) {
+	private Diagram finalizeDiagram(AbstractPSystem sys, UmlSource source, IteratorCounter2 it) {
+		if (sys == null)
+			return null;
+
+		final String err = sys.checkFinalError();
+		if (err != null) {
+			final LineLocation location = it.next().getLocation();
+			return buildExecutionError(source, err, location, it.getTrace());
+		}
+		if (source.getTotalLineCount() == 2) {
+			final LineLocation location = it.next().getLocation();
+			return buildEmptyError(source, location, it.getTrace());
+		}
+		sys.makeDiagramReady();
+		if (sys.isOk() == false)
+			return null;
+
+		return sys;
+	}
+
+	private AbstractPSystem executeFewLines(AbstractPSystem sys, UmlSource source, final IteratorCounter2 it,
+			ParserPass currentPass) {
 		final Step step = getCandidate(it);
 		if (step == null) {
-			final ErrorUml err = new ErrorUml(ErrorUmlType.SYNTAX_ERROR, "Syntax Error?", 0, it.peek().getLocation());
+			final ErrorUml err = new ErrorUml(ErrorUmlType.SYNTAX_ERROR, "Syntax Error?", 0, it.peek().getLocation(), getUmlDiagramType());
 			it.next();
 			return PSystemErrorUtils.buildV2(source, err, null, it.getTrace());
 		}
 
-		final CommandExecutionResult result = sys.executeCommand(step.command, step.blocLines);
+		if (step.command.isEligibleFor(currentPass) == false)
+			return sys;
+
+		final CommandExecutionResult result = sys.executeCommand(step.command, step.blocLines, currentPass);
 		if (result.isOk() == false) {
 			final LineLocation location = ((StringLocated) step.blocLines.getFirst()).getLocation();
 			final ErrorUml err = new ErrorUml(ErrorUmlType.EXECUTION_ERROR, result.getError(), result.getScore(),
-					location);
+					location, getUmlDiagramType());
 			sys = PSystemErrorUtils.buildV2(source, err, result.getDebugLines(), it.getTrace());
 		}
 		if (result.getNewDiagram() != null)

@@ -41,6 +41,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -58,11 +61,13 @@ import net.sourceforge.plantuml.api.ImageDataComplex;
 import net.sourceforge.plantuml.api.ImageDataSimple;
 import net.sourceforge.plantuml.braille.UGraphicBraille;
 import net.sourceforge.plantuml.core.ImageData;
+import net.sourceforge.plantuml.jaws.JawsWarning;
 import net.sourceforge.plantuml.klimt.UStroke;
 import net.sourceforge.plantuml.klimt.UTranslate;
 import net.sourceforge.plantuml.klimt.color.ColorMapper;
 import net.sourceforge.plantuml.klimt.color.HColor;
 import net.sourceforge.plantuml.klimt.color.HColorGradient;
+import net.sourceforge.plantuml.klimt.color.HColorSet;
 import net.sourceforge.plantuml.klimt.color.HColorSimple;
 import net.sourceforge.plantuml.klimt.color.HColors;
 import net.sourceforge.plantuml.klimt.drawing.LimitFinder;
@@ -78,11 +83,14 @@ import net.sourceforge.plantuml.klimt.drawing.svg.UGraphicSvg;
 import net.sourceforge.plantuml.klimt.drawing.tikz.UGraphicTikz;
 import net.sourceforge.plantuml.klimt.drawing.txt.UGraphicTxt;
 import net.sourceforge.plantuml.klimt.drawing.visio.UGraphicVdx;
+import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.font.StringBounder;
+import net.sourceforge.plantuml.klimt.font.UFont;
 import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.UDrawable;
 import net.sourceforge.plantuml.klimt.shape.URectangle;
+import net.sourceforge.plantuml.klimt.shape.UText;
 import net.sourceforge.plantuml.skin.ColorParam;
 import net.sourceforge.plantuml.skin.CornerParam;
 import net.sourceforge.plantuml.skin.LineParam;
@@ -116,6 +124,7 @@ public class ImageBuilder {
 	private TitledDiagram titledDiagram;
 	private boolean randomPixel;
 	private String warningOrError;
+	private Set<JawsWarning> warnings = EnumSet.noneOf(JawsWarning.class);
 
 	public static ImageBuilder imageBuilder(FileFormatOption fileFormatOption) {
 		return new ImageBuilder(fileFormatOption);
@@ -215,6 +224,7 @@ public class ImageBuilder {
 		seed = diagram.seed();
 		titledDiagram = diagram;
 		warningOrError = diagram.getWarningOrError();
+		warnings = diagram.getPragma().warnings();
 		return this;
 	}
 
@@ -240,6 +250,12 @@ public class ImageBuilder {
 
 	private ImageData writeImageInternal(OutputStream os) throws IOException {
 		XDimension2D dim = getFinalDimension();
+		XDimension2D dimWarning = null;
+		if (warnings != null && warnings.size() > 0) {
+			dimWarning = getWarningDimension(fileFormatOption.getFileFormat().getDefaultStringBounder());
+			dim = dim.atLeast(dimWarning.getWidth(), 0);
+			dim = dim.delta(15, dimWarning.getHeight() + 20);
+		}
 		final Scale scale = titledDiagram == null ? null : titledDiagram.getScale();
 		final double scaleFactor = (scale == null ? 1 : scale.getScale(dim.getWidth(), dim.getHeight())) * getDpi()
 				/ 96.0;
@@ -247,7 +263,13 @@ public class ImageBuilder {
 			throw new IllegalStateException("Bad scaleFactor");
 		WasmLog.log("...image drawing...");
 		UGraphic ug = createUGraphic(dim, scaleFactor,
-				titledDiagram == null ? new Pragma() : titledDiagram.getPragma());
+				titledDiagram == null ? Pragma.createEmpty() : titledDiagram.getPragma());
+
+		if (warnings != null && warnings.size() > 0) {
+			drawWarning(dimWarning, ug.apply(UTranslate.dy(5)), dim.getWidth());
+			ug = ug.apply(UTranslate.dy(dimWarning.getHeight() + 20));
+		}
+
 		maybeDrawBorder(ug, dim);
 		if (randomPixel)
 			drawRandomPoint(ug);
@@ -266,6 +288,42 @@ public class ImageBuilder {
 			}
 		}
 		return createImageData(dim);
+	}
+
+	private final static FontConfiguration fc = FontConfiguration.blackBlueTrue(UFont.monospaced(10));
+	private final static List<String> WARNINGS = Arrays.asList("Warning",
+			"This diagram is using \\n which is deprecated and will be removed in the future.",
+			"You should use %n() instead in your diagram.", "More info on https://plantuml.com/newline");
+
+	private void drawWarning(XDimension2D dimWarning, UGraphic ug, double fullWidth) {
+
+		final HColorSet set = HColorSet.instance();
+
+		final HColor back = set.getColorOrWhite("ffffcc");
+		final HColor border = set.getColorOrWhite("ffdd88");
+		ug = ug.apply(back.bg()).apply(border);
+		final URectangle rect = URectangle.build(fullWidth - 10, dimWarning.getHeight() + 10).rounded(5);
+		ug.apply(new UTranslate(5, 0)).apply(UStroke.withThickness(3)).draw(rect);
+
+		ug = ug.apply(HColors.BLACK);
+		ug = ug.apply(new UTranslate(10, 15));
+
+		for (String s : WARNINGS) {
+			final UText text = UText.build(s, fc);
+			ug.draw(text);
+			final double height = text.calculateDimension(ug.getStringBounder()).getHeight();
+			ug = ug.apply(UTranslate.dy(height));
+		}
+	}
+
+	private XDimension2D getWarningDimension(StringBounder stringBounder) {
+		XDimension2D result = new XDimension2D(0, 0);
+		for (String s : WARNINGS) {
+			final UText text = UText.build(s, fc);
+			final XDimension2D dim = text.calculateDimension(stringBounder);
+			result = result.mergeTB(dim);
+		}
+		return result.delta(10, 5);
 	}
 
 	private void maybeDrawBorder(UGraphic ug, XDimension2D dim) {
@@ -333,9 +391,9 @@ public class ImageBuilder {
 		case VDX:
 			return new UGraphicVdx(backcolor, colorMapper, stringBounder);
 		case LATEX:
-			return new UGraphicTikz(backcolor, colorMapper, stringBounder, scaleFactor, true);
+			return new UGraphicTikz(backcolor, colorMapper, stringBounder, scaleFactor, true, pragma);
 		case LATEX_NO_PREAMBLE:
-			return new UGraphicTikz(backcolor, colorMapper, stringBounder, scaleFactor, false);
+			return new UGraphicTikz(backcolor, colorMapper, stringBounder, scaleFactor, false, pragma);
 		case BRAILLE_PNG:
 			return new UGraphicBraille(backcolor, colorMapper, stringBounder);
 		case UTXT:
@@ -359,9 +417,19 @@ public class ImageBuilder {
 		option = option.withColorMapper(fileFormatOption.getColorMapper());
 		option = option.withLinkTarget(getSvgLinkTarget());
 		option = option.withFont(pragma.getValue("svgfont"));
+		if (titledDiagram != null) {
+			option = option.withTitle(titledDiagram.getTitleDisplay());
+			option = option.withRootAttribute("data-diagram-type", titledDiagram.getUmlDiagramType().name());
+		}
 
-		if ("true".equalsIgnoreCase(pragma.getValue("svginteractive")))
-			option = option.withInteractive();
+		if ("true".equalsIgnoreCase(pragma.getValue("svginteractive"))) {
+			String interactiveBaseFilename = "default";
+			// To be uncommented when SequenceDiagramFloatingHeader will be ready
+//			if (titledDiagram != null && titledDiagram.getUmlDiagramType() == UmlDiagramType.SEQUENCE)
+//				interactiveBaseFilename = "sequencediagram";
+			option = option.withInteractive(interactiveBaseFilename);
+		}
+
 		if (skinParam != null) {
 			option = option.withLengthAdjust(skinParam.getlengthAdjust());
 			option = option.withSvgDimensionStyle(skinParam.svgDimensionStyle());

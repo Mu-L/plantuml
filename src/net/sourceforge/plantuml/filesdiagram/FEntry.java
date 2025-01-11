@@ -139,7 +139,7 @@ public class FEntry implements Iterable<FEntry> {
 		if (type == FilesType.NOTE)
 			return createOpale(skinParam);
 
-		final Display display = Display.getWithNewlines(getEmoticon() + getName());
+		final Display display = Display.getWithNewlines(skinParam.getPragma(), getEmoticon() + getName());
 		TextBlock result = display.create7(fontConfiguration, HorizontalAlignment.LEFT, skinParam,
 				CreoleMode.NO_CREOLE);
 		return result;
@@ -147,7 +147,7 @@ public class FEntry implements Iterable<FEntry> {
 
 	private Opale createOpale(ISkinParam skinParam) {
 
-		final StyleSignatureBasic signature = StyleSignatureBasic.of(SName.root, SName.element, SName.timingDiagram,
+		final StyleSignatureBasic signature = StyleSignatureBasic.of(SName.root, SName.element, SName.filesDiagram,
 				SName.note);
 		final Style style = signature.getMergedStyle(skinParam.getCurrentStyleBuilder());
 

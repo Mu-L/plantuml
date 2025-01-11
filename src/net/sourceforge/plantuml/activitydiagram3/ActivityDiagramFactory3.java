@@ -89,6 +89,7 @@ import net.sourceforge.plantuml.command.CommandFootboxIgnored;
 import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class ActivityDiagramFactory3 extends PSystemCommandFactory {
 
@@ -158,8 +159,13 @@ public class ActivityDiagramFactory3 extends PSystemCommandFactory {
 	}
 
 	@Override
-	public ActivityDiagram3 createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new ActivityDiagram3(source, skinParam);
+	public ActivityDiagram3 createEmptyDiagram(UmlSource source, Map<String, String> skinMap) {
+		return new ActivityDiagram3(source, skinMap);
+	}
+
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.ACTIVITY;
 	}
 
 }

@@ -46,6 +46,7 @@ import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.PlainDiagram;
 import net.sourceforge.plantuml.core.DiagramDescription;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.jaws.JawsStrange;
 import net.sourceforge.plantuml.klimt.UStroke;
 import net.sourceforge.plantuml.klimt.UTranslate;
 import net.sourceforge.plantuml.klimt.color.HColor;
@@ -65,6 +66,7 @@ import net.sourceforge.plantuml.klimt.shape.UDrawable;
 import net.sourceforge.plantuml.klimt.shape.UPolygon;
 import net.sourceforge.plantuml.klimt.shape.URectangle;
 import net.sourceforge.plantuml.klimt.sprite.SpriteContainerEmpty;
+import net.sourceforge.plantuml.skin.Pragma;
 import net.sourceforge.plantuml.text.BackSlash;
 
 // http://www.redblobgames.com/grids/hexagons/
@@ -161,6 +163,7 @@ public class PSystemColors extends PlainDiagram implements UDrawable {
 		tt.drawU(ug.apply(new UTranslate(-dimText.getWidth() / 2, -dimText.getHeight() / 2)));
 	}
 
+	@JawsStrange
 	private String findShortest(StringBounder stringBounder, UFont font, String colorName) {
 		String result = null;
 		double min = Double.MAX_VALUE;
@@ -260,7 +263,7 @@ public class PSystemColors extends PlainDiagram implements UDrawable {
 	private TextBlock getTextName(final UFont font, String name, final HColor color) {
 		final HColor opposite = color.opposite();
 		final FontConfiguration fc = FontConfiguration.create(font, opposite, HColors.BLUE, UStroke.simple());
-		final TextBlock tt = Display.getWithNewlines(name).create(fc, HorizontalAlignment.CENTER,
+		final TextBlock tt = Display.getWithNewlines(Pragma.createEmpty(), name).create(fc, HorizontalAlignment.CENTER,
 				new SpriteContainerEmpty());
 		return tt;
 	}

@@ -46,6 +46,7 @@ import net.sourceforge.plantuml.UmlDiagram;
 import net.sourceforge.plantuml.WithSprite;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandFactorySprite;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.core.DiagramDescription;
 import net.sourceforge.plantuml.core.ImageData;
 import net.sourceforge.plantuml.core.UmlSource;
@@ -74,8 +75,8 @@ public class StdlibDiagram extends UmlDiagram {
 	private static final int WIDTH = 1800;
 	private String name;
 
-	public StdlibDiagram(UmlSource source, Map<String, String> skinParam) {
-		super(source, UmlDiagramType.HELP, skinParam);
+	public StdlibDiagram(UmlSource source, Map<String, String> skinMap) {
+		super(source, UmlDiagramType.HELP, skinMap);
 	}
 
 	public DiagramDescription getDescription() {
@@ -132,7 +133,7 @@ public class StdlibDiagram extends UmlDiagram {
 			// System.err.println("s="+s);
 			final BlocLines bloc = BlocLines.fromArray(s.split("\n"));
 			try {
-				cmd.execute(this, bloc);
+				cmd.execute(this, bloc, ParserPass.ONE);
 			} catch (NoSuchColorException e) {
 				Logme.error(e);
 			}

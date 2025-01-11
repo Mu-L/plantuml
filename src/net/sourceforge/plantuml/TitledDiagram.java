@@ -42,6 +42,7 @@ import java.util.Map;
 import net.atmp.ImageBuilder;
 import net.sourceforge.plantuml.abel.DisplayPositioned;
 import net.sourceforge.plantuml.abel.DisplayPositionned;
+import net.sourceforge.plantuml.annotation.DuplicateCode;
 import net.sourceforge.plantuml.api.ApiStable;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.core.Diagram;
@@ -86,16 +87,10 @@ public abstract class TitledDiagram extends AbstractPSystem implements Diagram, 
 
 	private final SkinParam skinParam;
 
-	private final Pragma pragma = new Pragma();
-
-	public Pragma getPragma() {
-		return pragma;
-	}
-
 	public TitledDiagram(UmlSource source, UmlDiagramType type, Map<String, String> orig) {
 		super(source);
 		this.type = type;
-		this.skinParam = SkinParam.create(type);
+		this.skinParam = SkinParam.create(type, Pragma.createEmpty());
 		if (orig != null)
 			this.skinParam.copyAllFrom(orig);
 
@@ -121,6 +116,7 @@ public abstract class TitledDiagram extends AbstractPSystem implements Diagram, 
 		skinParam.addSprite(name, sprite);
 	}
 
+	@DuplicateCode(reference = "StyleExtractor")
 	public CommandExecutionResult loadSkin(String newSkin) throws IOException {
 		final String filename = newSkin + ".skin";
 		final InputStream is = StyleLoader.getInputStreamForStyle(filename);
@@ -147,7 +143,7 @@ public abstract class TitledDiagram extends AbstractPSystem implements Diagram, 
 	@ApiStable
 	final public Display getTitleDisplay() {
 		if (title == null)
-			return null;
+			return Display.NULL;
 		return title.getDisplay();
 	}
 
@@ -260,5 +256,11 @@ public abstract class TitledDiagram extends AbstractPSystem implements Diagram, 
 		final TextBlock textBlock = getTextMainBlock(fileFormatOption);
 		textBlock.drawU(ug);
 	}
+	
+	final public Pragma getPragma() {
+		return skinParam.getPragma();
+	}
+
+	
 
 }
