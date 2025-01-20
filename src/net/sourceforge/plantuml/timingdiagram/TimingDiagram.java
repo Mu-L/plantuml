@@ -62,6 +62,9 @@ import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.AbstractTextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.ULine;
+import net.sourceforge.plantuml.klimt.shape.URectangle;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.stereo.Stereotype;
 import net.sourceforge.plantuml.style.PName;
@@ -91,8 +94,8 @@ public class TimingDiagram extends UmlDiagram implements Clocks {
 		return new DiagramDescription("(Timing Diagram)");
 	}
 
-	public TimingDiagram(UmlSource source) {
-		super(source, UmlDiagramType.TIMING, null);
+	public TimingDiagram(UmlSource source, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.TIMING, null, preprocessing);
 	}
 
 	@Override
@@ -133,6 +136,15 @@ public class TimingDiagram extends UmlDiagram implements Clocks {
 		ruler.ensureNotEmpty();
 		final StringBounder stringBounder = ug.getStringBounder();
 		final double part1MaxWidth = getPart1MaxWidth(stringBounder);
+
+		for (Player player : players.values()) {
+			final UGraphic ugPlayer = ug.apply(getUTranslateForPlayer(player, stringBounder));
+			final HColor generalBackgroundColor = player.getGeneralBackgroundColor();
+			if (generalBackgroundColor != null)
+				ugPlayer.apply(generalBackgroundColor).apply(generalBackgroundColor.bg())
+						.draw(URectangle.build(getWidthTotal(stringBounder), player.getFullHeight(stringBounder)));
+		}
+
 		final UTranslate widthPart1 = UTranslate.dx(part1MaxWidth);
 		if (compactByDefault == false)
 			drawBorder(ug);
@@ -146,6 +158,7 @@ public class TimingDiagram extends UmlDiagram implements Clocks {
 		for (Player player : players.values()) {
 			final UGraphic ugPlayer = ug.apply(getUTranslateForPlayer(player, stringBounder));
 			final double caption = getHeightForCaptions(stringBounder);
+
 			if (first) {
 				if (player.isCompact() == false)
 					drawHorizontalSeparator(ugPlayer);
@@ -279,18 +292,18 @@ public class TimingDiagram extends UmlDiagram implements Clocks {
 	}
 
 	public CommandExecutionResult createRobustConcise(String code, String full, TimingStyle type, boolean compact,
-			Stereotype stereotype) {
+			Stereotype stereotype, HColor backColor) {
 		final Player player = new PlayerRobustConcise(type, full, getSkinParam(), ruler, compactByDefault || compact,
-				stereotype);
+				stereotype, backColor);
 		players.put(code, player);
 		lastPlayer = player;
 		return CommandExecutionResult.ok();
 	}
 
 	public CommandExecutionResult createClock(String code, String full, int period, int pulse, int offset,
-			boolean compact) {
+			boolean compact, Stereotype stereotype) {
 		final PlayerClock player = new PlayerClock(full, getSkinParam(), ruler, period, pulse, offset,
-				compactByDefault);
+				compactByDefault, stereotype);
 		players.put(code, player);
 		clocks.put(code, player);
 		final TimeTick tick = new TimeTick(new BigDecimal(period), TimingFormat.DECIMAL);

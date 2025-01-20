@@ -44,6 +44,9 @@ import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.ConfigurationStore;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.ISkinSimple;
 import net.sourceforge.plantuml.style.PName;
@@ -56,10 +59,12 @@ public class EbnfEngine {
 	private final Style style;
 	private final HColorSet colorSet;
 	private final ISkinParam skinParam;
+	private final ConfigurationStore<OptionKey> option;
 	private final HColor lineColor;
 
-	public EbnfEngine(ISkinParam skinParam) {
+	public EbnfEngine(ISkinParam skinParam, ConfigurationStore<OptionKey> option) {
 		this.skinParam = skinParam;
+		this.option = option;
 		this.style = ETile.getStyleSignature().getMergedStyle(skinParam.getCurrentStyleBuilder());
 		this.fontConfiguration = style.getFontConfiguration(skinParam.getIHtmlColorSet());
 		this.colorSet = skinParam.getIHtmlColorSet();
@@ -69,12 +74,17 @@ public class EbnfEngine {
 
 	public void push(Token element) {
 		stack.addFirst(
-				new ETileBox(element.getData(), element.getSymbol(), fontConfiguration, style, colorSet, skinParam));
+				new ETileBox(element.getData(), element.getSymbol(), fontConfiguration, style, colorSet, skinParam, option));
 	}
 
 	public void optional() {
 		final ETile arg1 = stack.removeFirst();
 		stack.addFirst(new ETileOptional(arg1, skinParam));
+	}
+
+	public void not() {
+		final ETile arg1 = stack.removeFirst();
+		stack.addFirst(new ETileNot(arg1, fontConfiguration, style, colorSet, skinParam));
 	}
 
 	public void repetitionZeroOrMore(boolean isCompact) {
@@ -122,7 +132,7 @@ public class EbnfEngine {
 			arg1.push(arg2);
 			stack.addFirst(arg1);
 		} else if (arg2 instanceof ETileConcatenation) {
-			arg2.push(arg1);
+			((ETileConcatenation) arg2).pushLast(arg1);
 			stack.addFirst(arg2);
 		} else {
 			final ETile concat = new ETileConcatenation();

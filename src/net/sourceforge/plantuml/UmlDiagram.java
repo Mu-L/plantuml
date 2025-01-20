@@ -73,6 +73,8 @@ import net.sourceforge.plantuml.klimt.shape.UDrawable;
 import net.sourceforge.plantuml.klimt.shape.UImage;
 import net.sourceforge.plantuml.log.Logme;
 import net.sourceforge.plantuml.pdf.PdfConverter;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.security.SFile;
 import net.sourceforge.plantuml.security.SecurityUtils;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
@@ -93,8 +95,8 @@ public abstract class UmlDiagram extends TitledDiagram implements Diagram, Annot
 //		super(style, source, type);
 //	}
 
-	public UmlDiagram(UmlSource source, UmlDiagramType type, Map<String, String> orig) {
-		super(source, type, orig);
+	public UmlDiagram(UmlSource source, UmlDiagramType type, Map<String, String> orig, PreprocessingArtifact preprocessing) {
+		super(source, type, orig, preprocessing);
 	}
 
 	final public int getMinwidth() {
@@ -128,6 +130,7 @@ public abstract class UmlDiagram extends TitledDiagram implements Diagram, Annot
 			throws IOException {
 
 		fileFormatOption = fileFormatOption.withTikzFontDistortion(getSkinParam().getTikzFontDistortion());
+		fileFormatOption.getTikzFontDistortion().updateFromPragma(getPragma());
 
 		// ::comment when __CORE__
 		if (fileFormatOption.getFileFormat() == FileFormat.PDF)
@@ -141,14 +144,16 @@ public abstract class UmlDiagram extends TitledDiagram implements Diagram, Annot
 		} catch (NoStyleAvailableException e) {
 			// Logme.error(e);
 			exportDiagramError(os, e, fileFormatOption, null);
+			return ImageDataSimple.error(e);
 		} catch (UnparsableGraphvizException e) {
 			Logme.error(e);
 			exportDiagramError(os, e.getCause(), fileFormatOption, e.getGraphvizVersion());
+			return ImageDataSimple.error(e);
 		} catch (Throwable e) {
 			// Logme.error(e);
 			exportDiagramError(os, e, fileFormatOption, null);
+			return ImageDataSimple.error(e);
 		}
-		return ImageDataSimple.error();
 	}
 
 	private void exportDiagramError(OutputStream os, Throwable exception, FileFormatOption fileFormat,

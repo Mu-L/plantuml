@@ -35,12 +35,27 @@
  */
 package net.sourceforge.plantuml.skin;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
-public class Pragma {
+import net.sourceforge.plantuml.warning.Warning;
+import net.sourceforge.plantuml.warning.WarningHandler;
+
+public class Pragma implements WarningHandler {
 
 	private final Map<String, String> values = new LinkedHashMap<String, String>();
+	private final Set<Warning> warnings = new LinkedHashSet<>();
+
+	private Pragma() {
+	}
+
+	public static Pragma createEmpty() {
+		return new Pragma();
+	}
 
 	public void define(String name, String value) {
 		values.put(name, value);
@@ -94,4 +109,19 @@ public class Pragma {
 		return !isFalse(getValue("useintermediatepackages"));
 	}
 
+	public boolean legacyReplaceBackslashNByNewline() {
+		return true;
+	}
+
+	@Override
+	public void addWarning(Warning warning) {
+		this.warnings.add(warning);
+	}
+
+	@Override
+	public Collection<Warning> getWarnings() {
+		if (isTrue(getValue("warning")))
+			return this.warnings;
+		return Collections.emptyList();
+	}
 }

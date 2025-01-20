@@ -44,6 +44,7 @@ import net.sourceforge.plantuml.klimt.creole.SheetBuilder;
 import net.sourceforge.plantuml.klimt.creole.legacy.CreoleParser;
 import net.sourceforge.plantuml.klimt.font.FontConfiguration;
 import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
+import net.sourceforge.plantuml.skin.Pragma;
 import net.sourceforge.plantuml.style.ISkinSimple;
 import net.sourceforge.plantuml.style.Style;
 import net.sourceforge.plantuml.text.Guillemet;
@@ -120,5 +121,11 @@ public class SpriteContainerEmpty implements SpriteContainer, ISkinSimple {
 			CreoleMode creoleMode, FontConfiguration stereo) {
 		return new CreoleParser(fontConfiguration, horizontalAlignment, this, creoleMode, stereo);
 	}
+	
+	@Override
+	public Pragma getPragma() {
+		return Pragma.createEmpty();
+	}
+
 
 }

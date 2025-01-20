@@ -41,14 +41,17 @@ import java.util.Map;
 import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class HelpFactory extends PSystemCommandFactory {
 	// ::comment when __CORE__
 	// ::comment when __HAXE__
 
 	@Override
-	public Help createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new Help(source);
+	public Help createEmptyDiagram(UmlSource source, Map<String, String> skinMap, PreprocessingArtifact preprocessing) {
+		return new Help(source, preprocessing);
 	}
 
 	@Override
@@ -58,6 +61,11 @@ public class HelpFactory extends PSystemCommandFactory {
 		cmds.add(new CommandHelpKeyword());
 		cmds.add(new CommandHelpType());
 		cmds.add(new CommandHelpTheme());
+	}
+
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.HELP;
 	}
 
 }

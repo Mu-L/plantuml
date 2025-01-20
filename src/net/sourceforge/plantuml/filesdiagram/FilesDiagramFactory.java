@@ -41,6 +41,10 @@ import net.sourceforge.plantuml.command.PSystemAbstractFactory;
 import net.sourceforge.plantuml.core.Diagram;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.jsondiagram.StyleExtractor;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class FilesDiagramFactory extends PSystemAbstractFactory {
 
@@ -49,8 +53,15 @@ public class FilesDiagramFactory extends PSystemAbstractFactory {
 	}
 
 	@Override
-	public Diagram createSystem(UmlSource source, Map<String, String> skinParam) {
-		return new FilesDiagram(source);
+	public Diagram createSystem(UmlSource source, Map<String, String> skinMap, PreprocessingArtifact preprocessing) {
+		final StyleExtractor styleExtractor = new StyleExtractor(source.iterator2());
+
+		return new FilesDiagram(source, styleExtractor, preprocessing);
+	}
+
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.FILES;
 	}
 
 }

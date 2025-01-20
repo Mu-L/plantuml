@@ -42,6 +42,9 @@ import net.sourceforge.plantuml.command.PSystemAbstractFactory;
 import net.sourceforge.plantuml.core.Diagram;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.text.StringLocated;
 
 public class GitDiagramFactory extends PSystemAbstractFactory {
@@ -51,7 +54,7 @@ public class GitDiagramFactory extends PSystemAbstractFactory {
 	}
 
 	@Override
-	public Diagram createSystem(UmlSource source, Map<String, String> skinParam) {
+	public Diagram createSystem(UmlSource source, Map<String, String> skinMap, PreprocessingArtifact preprocessing) {
 		final GitTextArea textArea = new GitTextArea();
 
 		final Iterator<StringLocated> it = source.iterator2();
@@ -63,7 +66,12 @@ public class GitDiagramFactory extends PSystemAbstractFactory {
 
 			textArea.add(line);
 		}
-		return new GitDiagram(source, textArea);
+		return new GitDiagram(source, textArea, preprocessing);
+	}
+
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.GIT;
 	}
 
 }

@@ -51,16 +51,20 @@ import net.sourceforge.plantuml.command.CommandFootboxIgnored;
 import net.sourceforge.plantuml.command.CommandRankDir;
 import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.note.CommandFactoryNoteActivity;
 import net.sourceforge.plantuml.command.note.CommandFactoryNoteOnLink;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class ActivityDiagramFactory extends PSystemCommandFactory {
     // ::remove folder when __HAXE__
 
 	@Override
-	public ActivityDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new ActivityDiagram(source, skinParam);
+	public ActivityDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinMap, PreprocessingArtifact preprocessing) {
+		return new ActivityDiagram(source, skinMap, preprocessing);
 	}
 
 	@Override
@@ -77,7 +81,7 @@ public class ActivityDiagramFactory extends PSystemCommandFactory {
 		cmds.add(factoryNoteActivityCommand.createSingleLine());
 		cmds.add(factoryNoteActivityCommand.createMultiLine(false));
 
-		final CommandFactoryNoteOnLink factoryNoteOnLinkCommand = new CommandFactoryNoteOnLink();
+		final CommandFactoryNoteOnLink factoryNoteOnLinkCommand = new CommandFactoryNoteOnLink(ParserPass.ONE);
 		cmds.add(factoryNoteOnLinkCommand.createSingleLine());
 		cmds.add(factoryNoteOnLinkCommand.createMultiLine(false));
 
@@ -89,6 +93,11 @@ public class ActivityDiagramFactory extends PSystemCommandFactory {
 		cmds.add(new CommandHideShow2());
 		// addCommand(new CommandInnerConcurrent(system));
 
+	}
+
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.ACTIVITY;
 	}
 
 }

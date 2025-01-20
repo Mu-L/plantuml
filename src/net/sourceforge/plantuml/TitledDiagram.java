@@ -37,11 +37,14 @@ package net.sourceforge.plantuml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 import net.atmp.ImageBuilder;
 import net.sourceforge.plantuml.abel.DisplayPositioned;
 import net.sourceforge.plantuml.abel.DisplayPositionned;
+import net.sourceforge.plantuml.annotation.DuplicateCode;
 import net.sourceforge.plantuml.api.ApiStable;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.core.Diagram;
@@ -57,6 +60,7 @@ import net.sourceforge.plantuml.klimt.geom.HorizontalAlignment;
 import net.sourceforge.plantuml.klimt.geom.VerticalAlignment;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.sprite.Sprite;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.Pragma;
 import net.sourceforge.plantuml.skin.SkinParam;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
@@ -68,6 +72,7 @@ import net.sourceforge.plantuml.style.Style;
 import net.sourceforge.plantuml.style.StyleBuilder;
 import net.sourceforge.plantuml.style.StyleLoader;
 import net.sourceforge.plantuml.style.StyleSignatureBasic;
+import net.sourceforge.plantuml.warning.Warning;
 
 public abstract class TitledDiagram extends AbstractPSystem implements Diagram, Annotated {
 	// ::remove file when __HAXE__
@@ -86,16 +91,11 @@ public abstract class TitledDiagram extends AbstractPSystem implements Diagram, 
 
 	private final SkinParam skinParam;
 
-	private final Pragma pragma = new Pragma();
-
-	public Pragma getPragma() {
-		return pragma;
-	}
-
-	public TitledDiagram(UmlSource source, UmlDiagramType type, Map<String, String> orig) {
-		super(source);
+	public TitledDiagram(UmlSource source, UmlDiagramType type, Map<String, String> orig,
+			PreprocessingArtifact preprocessing) {
+		super(source, preprocessing);
 		this.type = type;
-		this.skinParam = SkinParam.create(type);
+		this.skinParam = SkinParam.create(type, Pragma.createEmpty());
 		if (orig != null)
 			this.skinParam.copyAllFrom(orig);
 
@@ -121,6 +121,7 @@ public abstract class TitledDiagram extends AbstractPSystem implements Diagram, 
 		skinParam.addSprite(name, sprite);
 	}
 
+	@DuplicateCode(reference = "StyleExtractor")
 	public CommandExecutionResult loadSkin(String newSkin) throws IOException {
 		final String filename = newSkin + ".skin";
 		final InputStream is = StyleLoader.getInputStreamForStyle(filename);
@@ -147,7 +148,7 @@ public abstract class TitledDiagram extends AbstractPSystem implements Diagram, 
 	@ApiStable
 	final public Display getTitleDisplay() {
 		if (title == null)
-			return null;
+			return Display.NULL;
 		return title.getDisplay();
 	}
 
@@ -259,6 +260,27 @@ public abstract class TitledDiagram extends AbstractPSystem implements Diagram, 
 	public void exportDiagramGraphic(UGraphic ug, FileFormatOption fileFormatOption) {
 		final TextBlock textBlock = getTextMainBlock(fileFormatOption);
 		textBlock.drawU(ug);
+	}
+
+	final public Pragma getPragma() {
+		return skinParam.getPragma();
+	}
+
+	@Override
+	public void addWarning(Warning warning) {
+		getPragma().addWarning(warning);
+	}
+
+	@Override
+	public Collection<Warning> getWarnings() {
+		return join(getPreprocessingArtifact().getWarnings(), getPragma().getWarnings());
+	}
+
+	static private Collection<Warning> join(Collection<Warning> col1, Collection<Warning> col2) {
+		final LinkedHashSet<Warning> result = new LinkedHashSet<>();
+		result.addAll(col1);
+		result.addAll(col2);
+		return result;
 	}
 
 }

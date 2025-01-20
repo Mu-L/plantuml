@@ -55,6 +55,8 @@ import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.shape.AbstractTextBlock;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.ULine;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class BoardDiagram extends UmlDiagram {
@@ -65,8 +67,8 @@ public class BoardDiagram extends UmlDiagram {
 		return new DiagramDescription("Board");
 	}
 
-	public BoardDiagram(UmlSource source) {
-		super(source, UmlDiagramType.BOARD, null);
+	public BoardDiagram(UmlSource source, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.BOARD, null, preprocessing);
 	}
 
 	@Override

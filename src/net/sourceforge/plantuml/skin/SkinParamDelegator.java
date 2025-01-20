@@ -461,4 +461,9 @@ public class SkinParamDelegator implements ISkinParam {
 		return skinParam.arrows();
 	}
 
+	@Override
+	public Pragma getPragma() {
+		return skinParam.getPragma();
+	}
+
 }

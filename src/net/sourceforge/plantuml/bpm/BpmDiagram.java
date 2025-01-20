@@ -50,6 +50,8 @@ import net.sourceforge.plantuml.core.ImageData;
 import net.sourceforge.plantuml.core.UmlSource;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.UDrawable;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.skin.SkinParam;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 
@@ -76,8 +78,8 @@ public class BpmDiagram extends UmlDiagram {
 		return new DiagramDescription("(Bpm Diagram)");
 	}
 
-	public BpmDiagram(UmlSource source) {
-		super(source, UmlDiagramType.BPM, null);
+	public BpmDiagram(UmlSource source, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.BPM, null, preprocessing);
 	}
 
 	@Override
@@ -95,7 +97,7 @@ public class BpmDiagram extends UmlDiagram {
 	private UDrawable getUDrawable() {
 		final Grid grid = createGrid();
 		cleanGrid(grid);
-		final GridArray gridArray = grid.toArray(SkinParam.create(getUmlDiagramType()));
+		final GridArray gridArray = grid.toArray(SkinParam.create(getUmlDiagramType(), getPragma()));
 		// gridArray.addEdges(edges);
 		// System.err.println("gridArray=" + gridArray);
 		return gridArray;

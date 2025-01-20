@@ -43,6 +43,9 @@ import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class PSystemEbnfFactory extends PSystemCommandFactory {
 
@@ -62,8 +65,14 @@ public class PSystemEbnfFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public PSystemEbnf createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new PSystemEbnf(source);
+	public PSystemEbnf createEmptyDiagram(UmlSource source, Map<String, String> skinMap, PreprocessingArtifact preprocessing) {
+		return new PSystemEbnf(source, preprocessing);
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.EBNF;
+	}
+
 
 }

@@ -64,6 +64,8 @@ import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.klimt.drawing.UGraphic;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.log.Logme;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.sequencediagram.graphic.FileMaker;
 import net.sourceforge.plantuml.sequencediagram.graphic.SequenceDiagramFileMakerPuma2;
 import net.sourceforge.plantuml.sequencediagram.graphic.SequenceDiagramTxtMaker;
@@ -95,13 +97,13 @@ public class SequenceDiagram extends UmlDiagram {
 
 	private final Rose skin2 = new Rose();
 
-	public SequenceDiagram(UmlSource source, Map<String, String> skinParam) {
-		super(source, UmlDiagramType.SEQUENCE, skinParam);
+	public SequenceDiagram(UmlSource source, Map<String, String> skinMap, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.SEQUENCE, skinMap, preprocessing);
 	}
 
 	@Deprecated
 	public Participant getOrCreateParticipant(String code) {
-		return getOrCreateParticipant(code, Display.getWithNewlines(code));
+		return getOrCreateParticipant(code, Display.getWithNewlines(getPragma(), code));
 	}
 
 	public Participant getOrCreateParticipant(String code, Display display) {
@@ -145,7 +147,7 @@ public class SequenceDiagram extends UmlDiagram {
 
 		if (Display.isNull(display)) {
 			// display = Arrays.asList(code);
-			display = Display.getWithNewlines(code);
+			display = Display.getWithNewlines(getPragma(), code);
 		}
 		final Participant result = new Participant(type, code, display, hiddenPortions, order,
 				getSkinParam().getCurrentStyleBuilder());
@@ -191,7 +193,7 @@ public class SequenceDiagram extends UmlDiagram {
 	}
 
 	private AbstractMessage getLastAbstractMessage() {
-		for (int i = events.size() - 1; i > 0; i--)
+		for (int i = events.size() - 1; i >= 0; i--)
 			if (events.get(i) instanceof AbstractMessage)
 				return (AbstractMessage) events.get(i);
 
@@ -283,9 +285,11 @@ public class SequenceDiagram extends UmlDiagram {
 		return OptionFlags.FORCE_TEOZ || getPragma().useTeozLayout();
 	}
 
+	
+	@Override
 	public ImageBuilder createImageBuilder(FileFormatOption fileFormatOption) throws IOException {
-		return super.createImageBuilder(fileFormatOption).annotations(false); // they are managed in the
-																				// SequenceDiagramFileMaker* classes
+		return super.createImageBuilder(fileFormatOption).annotations(false);
+		// they are managed in the SequenceDiagramFileMaker* classes
 	}
 
 	@Override

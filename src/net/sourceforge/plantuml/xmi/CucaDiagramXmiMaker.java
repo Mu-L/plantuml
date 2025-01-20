@@ -41,10 +41,10 @@ import java.io.OutputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import net.atmp.CucaDiagram;
 import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.UmlDiagram;
 import net.sourceforge.plantuml.classdiagram.ClassDiagram;
-import net.sourceforge.plantuml.cucadiagram.ICucaDiagram;
 import net.sourceforge.plantuml.descdiagram.DescriptionDiagram;
 import net.sourceforge.plantuml.log.Logme;
 import net.sourceforge.plantuml.statediagram.StateDiagram;
@@ -53,10 +53,10 @@ import net.sourceforge.plantuml.utils.Log;
 public final class CucaDiagramXmiMaker {
 	// ::remove folder when __CORE__
 
-	private final ICucaDiagram diagram;
+	private final CucaDiagram diagram;
 	private final FileFormat fileFormat;
 
-	public CucaDiagramXmiMaker(ICucaDiagram diagram, FileFormat fileFormat) throws IOException {
+	public CucaDiagramXmiMaker(CucaDiagram diagram, FileFormat fileFormat) throws IOException {
 		this.diagram = diagram;
 		this.fileFormat = fileFormat;
 	}
@@ -71,15 +71,12 @@ public final class CucaDiagramXmiMaker {
 			if (diagram instanceof StateDiagram)
 				xmi = new XmiStateDiagram((StateDiagram) diagram);
 			else if (diagram instanceof DescriptionDiagram)
-				xmi = new XmiDescriptionDiagram((DescriptionDiagram) diagram);
-			else if (fileFormat == FileFormat.XMI_STANDARD)
-				xmi = new XmiClassDiagramStandard((ClassDiagram) diagram);
-			else if (fileFormat == FileFormat.XMI_ARGO)
-				xmi = new XmiClassDiagramArgo((ClassDiagram) diagram);
-			else if (fileFormat == FileFormat.XMI_STAR)
-				xmi = new XmiClassDiagramStar((ClassDiagram) diagram);
+				xmi = createDescriptionDiagram();
+			else if (diagram instanceof ClassDiagram)
+				xmi = createClassDiagram();
 			else
-				throw new UnsupportedOperationException();
+				throw new UnsupportedOperationException(
+						"Diagram type " + diagram.getUmlDiagramType() + " is not supported in XMI");
 
 			xmi.transformerXml(fos);
 		} catch (ParserConfigurationException e) {
@@ -90,6 +87,29 @@ public final class CucaDiagramXmiMaker {
 			Log.error(e.toString());
 			Logme.error(e);
 			throw new IOException(e.toString());
+		}
+	}
+
+	private XmlDiagramTransformer createClassDiagram() throws ParserConfigurationException {
+		if (fileFormat == FileFormat.XMI_STANDARD)
+			return new XmiClassDiagramStandard((ClassDiagram) diagram);
+		else if (fileFormat == FileFormat.XMI_ARGO)
+			return new XmiClassDiagramArgo((ClassDiagram) diagram);
+		else if (fileFormat == FileFormat.XMI_SCRIPT)
+			return new XmiClassDiagramScript((ClassDiagram) diagram);
+		else if (fileFormat == FileFormat.XMI_STAR)
+			return new XmiClassDiagramStar((ClassDiagram) diagram);
+		else 
+			throw new UnsupportedOperationException();
+	}
+
+	private XmlDiagramTransformer createDescriptionDiagram() throws ParserConfigurationException {
+		if (fileFormat == FileFormat.XMI_SCRIPT) {
+			return new XmiDescriptionDiagramScript((DescriptionDiagram) diagram);
+		} else {
+			// dont care about which file format is specified, to keep backwards
+			// compatibility
+			return new XmiDescriptionDiagramStandard((DescriptionDiagram) diagram);
 		}
 	}
 

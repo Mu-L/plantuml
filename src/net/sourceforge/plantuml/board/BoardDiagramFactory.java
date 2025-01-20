@@ -43,6 +43,9 @@ import net.sourceforge.plantuml.command.CommonCommands;
 import net.sourceforge.plantuml.command.PSystemCommandFactory;
 import net.sourceforge.plantuml.core.DiagramType;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class BoardDiagramFactory extends PSystemCommandFactory {
 	// ::remove folder when __CORE__
@@ -64,8 +67,13 @@ public class BoardDiagramFactory extends PSystemCommandFactory {
 	}
 
 	@Override
-	public BoardDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new BoardDiagram(source);
+	public BoardDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinMap, PreprocessingArtifact preprocessing) {
+		return new BoardDiagram(source, preprocessing);
+	}
+
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.BOARD;
 	}
 
 }

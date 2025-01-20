@@ -46,6 +46,8 @@ import net.sourceforge.plantuml.command.note.sequence.FactorySequenceNoteCommand
 import net.sourceforge.plantuml.command.note.sequence.FactorySequenceNoteOnArrowCommand;
 import net.sourceforge.plantuml.command.note.sequence.FactorySequenceNoteOverSeveralCommand;
 import net.sourceforge.plantuml.core.UmlSource;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
+import net.sourceforge.plantuml.preproc.OptionKey;
 import net.sourceforge.plantuml.sequencediagram.command.CommandActivate;
 import net.sourceforge.plantuml.sequencediagram.command.CommandActivate2;
 import net.sourceforge.plantuml.sequencediagram.command.CommandArrow;
@@ -79,12 +81,13 @@ import net.sourceforge.plantuml.sequencediagram.command.CommandReferenceMultilin
 import net.sourceforge.plantuml.sequencediagram.command.CommandReferenceOverSeveral;
 import net.sourceforge.plantuml.sequencediagram.command.CommandReturn;
 import net.sourceforge.plantuml.sequencediagram.command.CommandUrl;
+import net.sourceforge.plantuml.skin.UmlDiagramType;
 
 public class SequenceDiagramFactory extends PSystemCommandFactory {
 
 	@Override
-	public SequenceDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinParam) {
-		return new SequenceDiagram(source, skinParam);
+	public SequenceDiagram createEmptyDiagram(UmlSource source, Map<String, String> skinMap, PreprocessingArtifact preprocessing) {
+		return new SequenceDiagram(source, skinMap, preprocessing);
 	}
 
 	@Override
@@ -146,5 +149,11 @@ public class SequenceDiagramFactory extends PSystemCommandFactory {
 		cmds.add(new CommandUrl());
 		cmds.add(new CommandLinkAnchor());
 	}
+	
+	@Override
+	public UmlDiagramType getUmlDiagramType() {
+		return UmlDiagramType.SEQUENCE;
+	}
+
 
 }

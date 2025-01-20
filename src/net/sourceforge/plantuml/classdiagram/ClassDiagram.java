@@ -45,17 +45,17 @@ import net.sourceforge.plantuml.abel.Link;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.core.ImageData;
 import net.sourceforge.plantuml.core.UmlSource;
-import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.objectdiagram.AbstractClassOrObjectDiagram;
 import net.sourceforge.plantuml.plasma.Quark;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.svek.image.EntityImageClass;
 
 public class ClassDiagram extends AbstractClassOrObjectDiagram {
 
-	public ClassDiagram(UmlSource source, Map<String, String> skinParam) {
-		super(source, UmlDiagramType.CLASS, skinParam);
+	public ClassDiagram(UmlSource source, Map<String, String> skinMap, PreprocessingArtifact preprocessingArtifact) {
+		super(source, UmlDiagramType.CLASS, skinMap, preprocessingArtifact);
 	}
 
 	private boolean allowMixing;
@@ -98,7 +98,7 @@ public class ClassDiagram extends AbstractClassOrObjectDiagram {
 
 	private RowLayout getRawLayout(int raw) {
 		final RowLayout rawLayout = new RowLayout();
-		for (Entity leaf : entityFactory.leafs())
+		for (Entity leaf : this.leafs())
 			if (leaf.getRawLayout() == raw)
 				rawLayout.addLeaf(getEntityImageClass(leaf));
 
@@ -106,7 +106,7 @@ public class ClassDiagram extends AbstractClassOrObjectDiagram {
 	}
 
 	private TextBlock getEntityImageClass(Entity entity) {
-		return new EntityImageClass(entity, getSkinParam(), this);
+		return new EntityImageClass(entity, this);
 	}
 
 	@Override
@@ -125,29 +125,6 @@ public class ClassDiagram extends AbstractClassOrObjectDiagram {
 
 		this.applySingleStrategy();
 		return super.checkFinalError();
-	}
-
-	private void packSomePackage() {
-		String separator = getNamespaceSeparator();
-		if (separator == null)
-			separator = ".";
-
-		while (true) {
-			boolean changed = false;
-			for (Entity group : this.entityFactory.groups()) {
-				if (group.canBePacked()) {
-					final Entity child = group.groups().iterator().next();
-					final String appended = group.getDisplay().get(0) + separator;
-					final Display newDisplay = child.getDisplay().appendFirstLine(appended);
-					child.setDisplay(newDisplay);
-					group.setPacked(true);
-					changed = true;
-				}
-			}
-			if (changed == false)
-				return;
-		}
-
 	}
 
 	public CommandExecutionResult checkIfPackageHierarchyIfOk(Entity entity) {

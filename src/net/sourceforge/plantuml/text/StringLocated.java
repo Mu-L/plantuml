@@ -35,13 +35,21 @@
  */
 package net.sourceforge.plantuml.text;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.sourceforge.plantuml.StringUtils;
+import net.sourceforge.plantuml.jaws.Jaws;
+import net.sourceforge.plantuml.jaws.JawsFlags;
+import net.sourceforge.plantuml.jaws.JawsStrange;
 import net.sourceforge.plantuml.utils.LineLocation;
 
 final public class StringLocated {
-    // ::remove folder when __HAXE__
+	// ::remove folder when __HAXE__
 
 	private final String s;
 	private final LineLocation location;
@@ -50,6 +58,60 @@ final public class StringLocated {
 	private StringLocated trimmed;
 	private long fox = -1;
 	private TLineType type;
+
+//	public StringLocated jawsPatchNewlines() {
+//	return new StringLocated(s.replace("\\n", "%n()"), location, preprocessorError);
+//}
+//
+//public BlocLines expandsJaws() {
+//	BlocLines result = BlocLines.create();
+//	for (String part : s.split("" + Jaws.BLOCK_E1_NEWLINE))
+//		result = result.add(new StringLocated(part, location, preprocessorError));
+//	return result;
+//}
+
+	public List<StringLocated> expandsJawsForPreprocessor() {
+		if (JawsFlags.PARSE_NEW_MULTILINE_TRIPLE_MARKS) {
+			final int x = searchMultilineTripleSeparators();
+			if (x == -1)
+				return Arrays.asList(this);
+			final String s1 = s.substring(0, x);
+			final String s2 = s.substring(x + 3);
+			return Arrays.asList(new StringLocated(s1, location, preprocessorError).jawsHideBackslash(),
+					new StringLocated(s2, location, preprocessorError).jawsHideBackslash());
+		}
+		return Arrays.asList(this);
+	}
+
+	private static final Pattern TRIPLE_PATTERN = Pattern.compile("!!!|'''|\"\"\"");
+
+	private int searchMultilineTripleSeparators() {
+		final Matcher matcher = TRIPLE_PATTERN.matcher(s);
+
+		if (matcher.find())
+			return matcher.start();
+
+		return -1;
+	}
+
+	public List<StringLocated> expandsJaws5() {
+		final List<StringLocated> copy = new ArrayList<>();
+		for (String s : expandsJaws3())
+			copy.add(new StringLocated(s, location, preprocessorError));
+		return copy;
+	}
+
+	public StringLocated jawsHideBackslash() {
+		return new StringLocated(s.replace('\\', Jaws.BLOCK_E1_REAL_BACKSLASH), location, preprocessorError);
+	}
+
+	public List<String> expandsJaws3() {
+		return Arrays.asList(s.split("" + Jaws.BLOCK_E1_NEWLINE));
+	}
+
+	public static List<String> expandsJaws4(String s) {
+		return Arrays.asList(s.split("" + Jaws.BLOCK_E1_NEWLINE));
+	}
 
 	public StringLocated(String s, LineLocation location) {
 		this(s, location, null);
@@ -67,6 +129,10 @@ final public class StringLocated {
 	}
 
 	public StringLocated append(String endOfLine) {
+		return new StringLocated(s + endOfLine, location, preprocessorError);
+	}
+
+	public StringLocated append(char endOfLine) {
 		return new StringLocated(s + endOfLine, location, preprocessorError);
 	}
 
@@ -99,6 +165,7 @@ final public class StringLocated {
 		return trimmed;
 	}
 
+	@JawsStrange
 	public StringLocated removeInnerComment() {
 		final String string = s.toString();
 		final String trim = string.replace('\t', ' ').trim();
@@ -156,6 +223,10 @@ final public class StringLocated {
 
 	public int length() {
 		return s.length();
+	}
+
+	public char charAt(int i) {
+		return s.charAt(i);
 	}
 
 }
