@@ -1,110 +1,95 @@
-function addItemToMapOfLists(mapOfLists, name, item) {
-  // mapOfLists = {
-  //   'key1': [item1, item2, ...],
-  //   'key2': [item3, item4, ...],
-  // }
-  if (mapOfLists[name].length > 0) {
-    if (!mapOfLists[name].includes(item)) {
-      mapOfLists[name].push(item);
+(function (){
+    function escapeForCssAttributeSelector(entityName) {
+        return entityName
+            ?.replaceAll('\\', '\\\\')
+            ?.replaceAll('"', '\\"');
     }
-  } else {
-    mapOfLists[name] = [item];
-  }
-}
 
-function main() {
-  let elems = Array.from(document.getElementsByClassName('elem'));
-  let links = Array.from(document.getElementsByClassName('link'));
+	function getEdgesAndDistance1Nodes(startingNode) {
+		const nodeName = startingNode.getAttribute("data-entity");
+		const escapedNodeName = escapeForCssAttributeSelector(nodeName);
+		let results = new Set();
 
-  let elemsMap = {};
-  let linkedElems = {};
-  let linkedLinks = {};
+        svg.querySelectorAll(`.link[data-entity-1="${escapedNodeName}"], .link[data-entity-2="${escapedNodeName}"]`).forEach(link => {
+            const linkStartNodeName = link.getAttribute("data-entity-1");
+            const linkEndNodeName = link.getAttribute("data-entity-2");
 
-  elems.forEach(elem => {
-    let name = elem.classList[1];
-    elemsMap[name] = elem;
-    linkedElems[name] = [];
-    linkedLinks[name] = [];
-  });
+            if (linkStartNodeName === nodeName) {
+                results.add(svg.querySelector(`[data-entity="${escapeForCssAttributeSelector(linkEndNodeName)}"]`));
+                results.add(link);
+            } else if (linkEndNodeName === nodeName) {
+                results.add(svg.querySelector(`[data-entity="${escapeForCssAttributeSelector(linkStartNodeName)}"]`));
+                results.add(link);
+			}
+		});
 
-  links.forEach(link => {
-    let name1 = link.classList[1];
-    let name2 = link.classList[2];
+		return results;
+	}
 
-    if (elemsMap[name1]) {
-      if (elemsMap[name2]) {
-        let elem1 = elemsMap[name1];
-        let elem2 = elemsMap[name2];
+	/**
+	 * @param {SVGElement} elem
+	 * @param tagName in lowercase, e.g. "g" or "svg"
+	 * @return {{SVGElement}} or null if no matching ancestor is found
+	 */
+	function findAncestorWithTagName(elem, tagName) {
+		while (elem && elem.nodeName.toLowerCase() !== tagName) {
+			elem = elem.parentElement;
+		}
+		return elem;
+	}
 
-        addItemToMapOfLists(linkedElems, name1, elem2);
-        addItemToMapOfLists(linkedElems, name2, elem1);
-
-        addItemToMapOfLists(linkedLinks, name1, link);
-        addItemToMapOfLists(linkedLinks, name2, link);
-      }
+    function onClickEntity() {
+        if (svg.classList.contains("click-active") && this.classList.contains("click-selected")) {
+            handleDeselect("click");
+        } else {
+            handleSelect(this, "click");
+        }
     }
-  });
 
-  let selectedElems = [];
-  let selectedLinks = [];
-  let selectedElemName = null;
+	function onMouseOverEntity() {
+	    handleSelect(this, "mouseover");
+	}
 
-  function clearSelected() {
-    selectedElems.forEach(item => {
-      item.classList.remove('selected');
-    });
-    selectedElems = [];
+	function onMouseOutEntity() {
+	    handleDeselect("mouseover");
+	}
 
-    selectedLinks.forEach(item => {
-      item.classList.remove('selected');
-    });
-    selectedLinks = [];
-  }
+    // CSS class descriptions:
+    //   xxx-active: highlight styles will be ignored when this is not added to the the parent <svg>.
+    //   xxx-selected: lets us track which entity `<g>` was clicked/hovered.
+    //   xxx-highlighted: when highlighting is 'active', elements without this class will be dimmed.
+    //
+    // 'xxx' event type will be 'hover' or 'mouseover'.
+	function handleSelect(selectedEntityElem, eventType) {
+	    svg.querySelectorAll(`.${eventType}-selected, .${eventType}-highlighted`).forEach(elem => {
+            elem.classList.remove(`${eventType}-selected`, `${eventType}-highlighted`);
+        });
 
-  function selectAll() {
-    selectedElemName = null;
+        svg.classList.add(`${eventType}-active`);
+        selectedEntityElem.classList.add(`${eventType}-selected`, `${eventType}-highlighted`);
 
-    selectedElems = Array.from(elems);
-    selectedElems.forEach(item => {
-      item.classList.add('selected');
-    });
+        getEdgesAndDistance1Nodes(selectedEntityElem).forEach(node => {
+            node.classList.add(`${eventType}-highlighted`);
+        });
+	}
 
-    selectedLinks = Array.from(links);
-    selectedLinks.forEach(item => {
-      item.classList.add('selected');
-    });
-  }
-
-  function selectElem(elemName) {
-    if (elemName === selectedElemName) {
-      selectAll();
-
-    } else {
-      clearSelected();
-      selectedElemName = elemName;
-
-      elemsMap[elemName].classList.add('selected');
-      selectedElems.push(elemsMap[elemName]);
-
-      linkedElems[elemName].forEach(linkedElem => {
-        selectedElems.push(linkedElem);
-        linkedElem.classList.add('selected');
-      });
-
-      linkedLinks[elemName].forEach(linkedLink => {
-        selectedLinks.push(linkedLink);
-        linkedLink.classList.add('selected');
-      });
+    function handleDeselect(eventType) {
+		svg.classList.remove(`${eventType}-active`);
     }
-  }
 
-  Object.keys(elemsMap).forEach(name => {
-    elemsMap[name].onclick = () => { selectElem(name); };
-  });
+	const svg = findAncestorWithTagName(document.currentScript, "svg");
 
-  selectAll();
-}
+    document.addEventListener("DOMContentLoaded", () => {
+        svg.querySelectorAll("g.entity").forEach(entity => {
+            entity.addEventListener("mouseover", onMouseOverEntity);
+            entity.addEventListener("mouseout", onMouseOutEntity);
+            entity.addEventListener("click", onClickEntity);
+        });
 
-document.addEventListener('DOMContentLoaded', (event) => {
-  main();
-});
+        svg.addEventListener("keydown", event => {
+            if (event.code === "Escape") {
+              handleDeselect("click");
+            }
+          });
+    });
+})();

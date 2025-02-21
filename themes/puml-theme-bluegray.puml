@@ -1,8 +1,14 @@
-''
-'' A blue gray theme
-''
-'' Author: Brett Schwarz
-'' Copyright (c) 2019 by Brett Schwarz
+---
+name: bluegray
+display_name: Blue Gray
+description: A blue gray theme
+author: Brett Schwarz
+release: 
+license: MIT
+version: 
+source: https://github.com/bschwarz/puml-themes
+inspiration: 
+---
 
 !$THEME = "bluegray"
 

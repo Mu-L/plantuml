@@ -1,9 +1,14 @@
-''
-'' sketchy-outline theme based off of the bootstrap theme of the same name
-'' https://bootswatch.com/sketchy/
-''
-'' Author = "Brett Schwarz
-'' Copyright (c) 2020 by Brett Schwarz
+---
+name: sketchy-outline
+display_name: Sketchy Outline
+description: Theme based off of the bootstrap theme of the same name, with outline colors
+author: Brett Schwarz
+release: 
+license: MIT
+version: 
+source: https://github.com/bschwarz/puml-themes
+inspiration: https://bootswatch.com/sketchy/
+---
 
 !$THEME = "sketchy-outline"
 
@@ -13,7 +18,7 @@
 
 skinparam backgroundColor $BGCOLOR
 skinparam useBetaStyle false
-skinparam handwritten true
+!option handwritten true
 skinparam shadowing false
 
 ''
