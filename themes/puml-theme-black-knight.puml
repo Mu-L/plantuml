@@ -1,10 +1,15 @@
-''
-'' Colors representing the black knight
-'' Looks best on a dark background
-''
-'' Author: Brett Schwarz
-''
-''
+---
+name: black-knight
+display_name: Black Knight
+description: Colors representing the black knight. Looks best on a dark background.
+author: Brett Schwarz
+release: 
+license: MIT
+version: 
+source: https://github.com/bschwarz/puml-themes
+inspiration: 
+---
+
 !$THEME = "black-knight"
 ''
 '' Assume if the background is transparent, that the 

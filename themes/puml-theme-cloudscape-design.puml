@@ -1,8 +1,15 @@
-''
-'' Theme based off of the colors used by Cloudscape design
-''
-'' Author: Brett Schwarz
-''
+---
+name: cloudscape-design
+display_name: Cloudscape design
+description: Theme based off of the colors used by Cloudscape design
+author: Brett Schwarz
+release: 
+license: MIT
+version: 
+source: https://github.com/bschwarz/puml-themes
+inspiration: https://cloudscape.design/foundation/visual-foundation/data-vis-colors/
+---
+
 '!$PUML_OUTLINE = "true"
 '!$PUML_BGCOLOR = "#0f1b2a"
 '!$PUML_MODE = "dark"
