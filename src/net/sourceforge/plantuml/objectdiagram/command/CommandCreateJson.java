@@ -42,6 +42,8 @@ import net.sourceforge.plantuml.command.CommandControl;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.NameAndCodeParser;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.cucadiagram.BodierJSon;
 import net.sourceforge.plantuml.json.Json.DefaultHandler;
@@ -63,6 +65,7 @@ import net.sourceforge.plantuml.stereo.StereotypePattern;
 import net.sourceforge.plantuml.text.StringLocated;
 import net.sourceforge.plantuml.url.UrlBuilder;
 import net.sourceforge.plantuml.utils.BlocLines;
+import net.sourceforge.plantuml.utils.LineLocation;
 
 public class CommandCreateJson extends CommandMultilines2<AbstractEntityDiagram> {
 
@@ -74,7 +77,7 @@ public class CommandCreateJson extends CommandMultilines2<AbstractEntityDiagram>
 		return RegexConcat.build(CommandCreateJson.class.getName(), RegexLeaf.start(), //
 				new RegexLeaf("TYPE", "json"), //
 				RegexLeaf.spaceOneOrMore(), //
-				new RegexLeaf("NAME", "(?:[%g]([^%g]+)[%g][%s]+as[%s]+)?([%pLN_.]+)"), //
+				NameAndCodeParser.nameAndCode(), //
 				StereotypePattern.optional("STEREO"), //
 				UrlBuilder.OPTIONAL, //
 				RegexLeaf.spaceZeroOrMore(), //
@@ -90,11 +93,11 @@ public class CommandCreateJson extends CommandMultilines2<AbstractEntityDiagram>
 	}
 
 	@Override
-	protected CommandExecutionResult executeNow(AbstractEntityDiagram diagram, BlocLines lines)
+	protected CommandExecutionResult executeNow(AbstractEntityDiagram diagram, BlocLines lines, ParserPass currentPass)
 			throws NoSuchColorException {
 		lines = lines.trim().removeEmptyLines();
 		final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
-		final Entity entity1 = executeArg0(diagram, line0);
+		final Entity entity1 = executeArg0(lines.getLocation(), diagram, line0);
 		if (entity1 == null)
 			return CommandExecutionResult.error("No such entity");
 
@@ -117,43 +120,53 @@ public class CommandCreateJson extends CommandMultilines2<AbstractEntityDiagram>
 	}
 
 	private JsonValue getJsonValue(BlocLines lines) {
+		final DefaultHandler handler = new DefaultHandler();
+		final JsonParser jsonParser = new JsonParser(handler);
 		try {
 			final String sb = getJsonString(lines);
-			final DefaultHandler handler = new DefaultHandler();
-			new JsonParser(handler).parse(sb);
-			final JsonValue json = handler.getValue();
-			return json;
-		} catch (Exception e) {
-			return null;
+			jsonParser.parse(sb);
+			return handler.getValue();
+		} catch (Exception e1) {
+			// Sorry, this is VERY ugly
+			// Let's see if wa could ignore external brackets...
+			try {
+				lines = lines.subExtract(1, 1);
+				final StringBuilder sb = new StringBuilder();
+				for (StringLocated sl : lines)
+					sb.append(sl.getString());
+
+				jsonParser.parse(sb.toString());
+				return handler.getValue();
+			} catch (Exception e2) {
+				return null;
+			}
 		}
 	}
 
 	private String getJsonString(BlocLines lines) {
 		lines = lines.subExtract(1, 1);
 		final StringBuilder sb = new StringBuilder("{");
-		for (StringLocated sl : lines) {
-			final String line = sl.getString();
-			assert line.length() > 0;
-			sb.append(line);
-		}
+		for (StringLocated sl : lines)
+			sb.append(sl.getString());
+
 		sb.append("}");
 		return sb.toString();
 	}
 
-	private Entity executeArg0(AbstractEntityDiagram diagram, RegexResult line0) throws NoSuchColorException {
-		final String name = line0.get("NAME", 1);
+	private Entity executeArg0(LineLocation location, AbstractEntityDiagram diagram, RegexResult line0) throws NoSuchColorException {
+		final String idShort = diagram.cleanId(line0.getLazzy("CODE", 0));
 
-		final Quark<Entity> quark = diagram.quarkInContext(true, diagram.cleanId(name));
+		final Quark<Entity> quark = diagram.quarkInContext(true, idShort);
 		if (quark.getData() != null)
 			return null;
-		final String displayString = line0.get("NAME", 0);
+		final String displayString = line0.getLazzy("DISPLAY", 0);
 		final String stereotype = line0.get("STEREO", 0);
 
-		Display display = Display.getWithNewlines(displayString);
+		Display display = Display.getWithNewlines(diagram.getPragma(), displayString);
 		if (Display.isNull(display))
-			display = Display.getWithNewlines(name).withCreoleMode(CreoleMode.SIMPLE_LINE);
+			display = Display.getWithNewlines(diagram.getPragma(), quark.getName()).withCreoleMode(CreoleMode.SIMPLE_LINE);
 
-		final Entity entity = diagram.reallyCreateLeaf(quark, display, LeafType.JSON, null);
+		final Entity entity = diagram.reallyCreateLeaf(location, quark, display, LeafType.JSON, null);
 		if (stereotype != null)
 			entity.setStereotype(Stereotype.build(stereotype, diagram.getSkinParam().getCircledCharacterRadius(),
 					diagram.getSkinParam().getFont(null, false, FontParam.CIRCLED_CHARACTER),

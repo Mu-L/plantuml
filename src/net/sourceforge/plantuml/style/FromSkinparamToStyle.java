@@ -247,7 +247,18 @@ public class FromSkinparamToStyle {
 		addConvert("lifelineStrategy", PName.LineStyle, SName.lifeLine);
 		addConvert("wrapWidth", PName.MaximumWidth, SName.element);
 		addConvert("HyperlinkUnderline", PName.HyperlinkUnderlineThickness, SName.element);
+		addConvert("StereotypeAlignment", PName.HorizontalAlignment, SName.stereotype);
 
+		addConvert("stereotypeABackgroundColor", PName.BackGroundColor, SName.spotAbstractClass);
+		addConvert("stereotypeABorderColor", PName.LineColor, SName.spotAbstractClass);
+		addConvert("stereotypeCBackgroundColor", PName.BackGroundColor, SName.spotClass);
+		addConvert("stereotypeCBorderColor", PName.LineColor, SName.spotClass);
+		addConvert("stereotypeEBackgroundColor", PName.BackGroundColor, SName.spotEnum);
+		addConvert("stereotypeEBorderColor", PName.LineColor, SName.spotEnum);
+		addConvert("stereotypeIBackgroundColor", PName.BackGroundColor, SName.spotInterface);
+		addConvert("stereotypeIBorderColor", PName.LineColor, SName.spotInterface);
+		addConvert("stereotypeNBackgroundColor", PName.BackGroundColor, SName.spotAnnotation);
+		addConvert("stereotypeNBorderColor", PName.LineColor, SName.spotAnnotation);
 	}
 
 	private static void addMagic(SName sname) {
@@ -297,6 +308,8 @@ public class FromSkinparamToStyle {
 		} else if (key.equals("hyperlinkunderline")) {
 			if (value.equalsIgnoreCase("false"))
 				value = "0";
+			if (value.equalsIgnoreCase("true"))
+				value = "1";
 		}
 
 		if (value.equalsIgnoreCase("right:right"))

@@ -41,7 +41,6 @@ import java.util.Map;
 import net.atmp.InnerStrategy;
 import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.EntityPortion;
-import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.abel.LineConfigurable;
 import net.sourceforge.plantuml.cucadiagram.PortionShower;
 import net.sourceforge.plantuml.klimt.Shadowable;
@@ -60,7 +59,6 @@ import net.sourceforge.plantuml.klimt.geom.XRectangle2D;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.UComment;
 import net.sourceforge.plantuml.klimt.shape.URectangle;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
@@ -73,6 +71,7 @@ import net.sourceforge.plantuml.svek.ShapeType;
 import net.sourceforge.plantuml.svek.WithPorts;
 import net.sourceforge.plantuml.url.Url;
 import net.sourceforge.plantuml.utils.Direction;
+import net.sourceforge.plantuml.utils.LineLocation;
 
 public class EntityImageClass extends AbstractEntityImage implements Stencil, WithPorts {
 
@@ -81,13 +80,11 @@ public class EntityImageClass extends AbstractEntityImage implements Stencil, Wi
 	final private EntityImageClassHeader header;
 	final private Url url;
 	final private double roundCorner;
-	final private LeafType leafType;
 
 	final private LineConfigurable lineConfig;
 
-	public EntityImageClass(Entity entity, ISkinParam skinParam, PortionShower portionShower) {
-		super(entity, entity.getColors().mute(skinParam));
-		this.leafType = entity.getLeafType();
+	public EntityImageClass(Entity entity, PortionShower portionShower) {
+		super(entity);
 		this.lineConfig = entity;
 
 		this.roundCorner = getStyle().value(PName.RoundCorner).asDouble();
@@ -97,7 +94,7 @@ public class EntityImageClass extends AbstractEntityImage implements Stencil, Wi
 		this.body = entity.getBodier().getBody(getSkinParam(), showMethods, showFields, entity.getStereotype(),
 				getStyle(), null);
 
-		this.header = new EntityImageClassHeader(entity, getSkinParam(), portionShower);
+		this.header = new EntityImageClassHeader(entity, portionShower);
 		this.url = entity.getUrl99();
 	}
 
@@ -148,8 +145,13 @@ public class EntityImageClass extends AbstractEntityImage implements Stencil, Wi
 			ug.startUrl(url);
 
 		final Map<UGroupType, String> typeIDent = new EnumMap<>(UGroupType.class);
-		typeIDent.put(UGroupType.CLASS, "elem " + getEntity().getName() + " selected");
-		typeIDent.put(UGroupType.ID, "elem_" + getEntity().getName());
+		typeIDent.put(UGroupType.CLASS, "entity");
+		typeIDent.put(UGroupType.ID, "entity_" + getEntity().getName());
+		typeIDent.put(UGroupType.DATA_ENTITY, getEntity().getName());
+		typeIDent.put(UGroupType.DATA_UID, getEntity().getUid());
+		typeIDent.put(UGroupType.DATA_QUALIFIED_NAME, getEntity().getQuark().getQualifiedName());
+		if (getEntity().getLocation() != null)
+			typeIDent.put(UGroupType.DATA_SOURCE_LINE, "" + getEntity().getLocation().getPosition());
 		ug.startGroup(typeIDent);
 		drawInternal(ug);
 		ug.closeGroup();
@@ -180,8 +182,9 @@ public class EntityImageClass extends AbstractEntityImage implements Stencil, Wi
 
 		final double widthTotal = dimTotal.getWidth();
 		final double heightTotal = dimTotal.getHeight();
+		final LineLocation location = getEntity().getLocation();
 		final Shadowable rect = URectangle.build(widthTotal, heightTotal).rounded(roundCorner)
-				.withCommentAndCodeLine(getEntity().getName(), getEntity().getCodeLine());
+				.withCommentAndCodeLine(getEntity().getName(), location == null ? null : "" + location);
 
 		double shadow = 0;
 
@@ -189,7 +192,7 @@ public class EntityImageClass extends AbstractEntityImage implements Stencil, Wi
 		HColor headerBackcolor = getEntity().getColors().getColor(ColorType.HEADER);
 		HColor backcolor = getEntity().getColors().getColor(ColorType.BACK);
 
-		shadow = getStyle().value(PName.Shadowing).asDouble();
+		shadow = getStyle().getShadowing();
 
 		if (borderColor == null)
 			borderColor = getStyle().value(PName.LineColor).asColor(getSkinParam().getIHtmlColorSet());

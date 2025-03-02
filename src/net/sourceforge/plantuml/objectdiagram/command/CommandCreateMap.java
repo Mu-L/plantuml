@@ -43,6 +43,7 @@ import net.sourceforge.plantuml.classdiagram.AbstractEntityDiagram;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.cucadiagram.BodierMap;
 import net.sourceforge.plantuml.decoration.LinkDecor;
@@ -66,6 +67,7 @@ import net.sourceforge.plantuml.stereo.StereotypePattern;
 import net.sourceforge.plantuml.text.StringLocated;
 import net.sourceforge.plantuml.url.UrlBuilder;
 import net.sourceforge.plantuml.utils.BlocLines;
+import net.sourceforge.plantuml.utils.LineLocation;
 
 public class CommandCreateMap extends CommandMultilines2<AbstractEntityDiagram> {
 
@@ -100,11 +102,11 @@ public class CommandCreateMap extends CommandMultilines2<AbstractEntityDiagram> 
 	}
 
 	@Override
-	protected CommandExecutionResult executeNow(AbstractEntityDiagram diagram, BlocLines lines)
+	protected CommandExecutionResult executeNow(AbstractEntityDiagram diagram, BlocLines lines, ParserPass currentPass)
 			throws NoSuchColorException {
 		lines = lines.trim().removeEmptyLines();
 		final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
-		final Entity entity1 = executeArg0(diagram, line0);
+		final Entity entity1 = executeArg0(lines.getLocation(), diagram, line0);
 		if (entity1 == null)
 			return CommandExecutionResult.error("No such entity");
 
@@ -128,7 +130,7 @@ public class CommandCreateMap extends CommandMultilines2<AbstractEntityDiagram> 
 
 				final LinkType linkType = new LinkType(LinkDecor.ARROW, LinkDecor.NONE);
 				final int length = linkStr.length() - 2;
-				final Link link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(),
+				final Link link = new Link(lines.getLocation(), diagram, diagram.getSkinParam().getCurrentStyleBuilder(),
 						entity1, entity2, linkType, LinkArg.noDisplay(length));
 				link.setPortMembers(key, null);
 				diagram.addLink(link);
@@ -137,7 +139,7 @@ public class CommandCreateMap extends CommandMultilines2<AbstractEntityDiagram> 
 		return CommandExecutionResult.ok();
 	}
 
-	private Entity executeArg0(AbstractEntityDiagram diagram, RegexResult line0) throws NoSuchColorException {
+	private Entity executeArg0(LineLocation location, AbstractEntityDiagram diagram, RegexResult line0) throws NoSuchColorException {
 		final String name = line0.get("NAME", 1);
 
 		final Quark<Entity> quark = diagram.quarkInContext(true, diagram.cleanId(name));
@@ -147,11 +149,11 @@ public class CommandCreateMap extends CommandMultilines2<AbstractEntityDiagram> 
 		if (quark.getData() != null)
 			return null;
 
-		Display display = Display.getWithNewlines(displayString);
+		Display display = Display.getWithNewlines(diagram.getPragma(), displayString);
 		if (Display.isNull(display))
-			display = Display.getWithNewlines(name).withCreoleMode(CreoleMode.SIMPLE_LINE);
+			display = Display.getWithNewlines(diagram.getPragma(), name).withCreoleMode(CreoleMode.SIMPLE_LINE);
 
-		final Entity entity = diagram.reallyCreateLeaf(quark, display, LeafType.MAP, null);
+		final Entity entity = diagram.reallyCreateLeaf(location, quark, display, LeafType.MAP, null);
 		if (stereotype != null)
 			entity.setStereotype(Stereotype.build(stereotype, diagram.getSkinParam().getCircledCharacterRadius(),
 					diagram.getSkinParam().getFont(null, false, FontParam.CIRCLED_CHARACTER),

@@ -38,6 +38,7 @@ package net.sourceforge.plantuml.sequencediagram.command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.klimt.color.ColorParser;
 import net.sourceforge.plantuml.klimt.color.ColorType;
@@ -87,7 +88,7 @@ public class CommandParticipantMultilines extends CommandMultilines2<SequenceDia
 	}
 
 	@Override
-	protected CommandExecutionResult executeNow(SequenceDiagram diagram, BlocLines lines) throws NoSuchColorException {
+	protected CommandExecutionResult executeNow(SequenceDiagram diagram, BlocLines lines, ParserPass currentPass) throws NoSuchColorException {
 
 		final RegexResult arg = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
 
@@ -106,7 +107,7 @@ public class CommandParticipantMultilines extends CommandMultilines2<SequenceDia
 		final String orderString = arg.get("ORDER", 0);
 		final int order = orderString == null ? 0 : Integer.parseInt(orderString);
 
-		final Participant participant = diagram.createNewParticipant(type, code, strings, order);
+		final Participant participant = diagram.createNewParticipant(lines.getLocation(), type, code, strings, order);
 
 		final String stereotype = arg.get("STEREO", 0);
 

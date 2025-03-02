@@ -44,6 +44,8 @@ import net.sourceforge.plantuml.classdiagram.ClassDiagram;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.NameAndCodeParser;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.decoration.LinkDecor;
 import net.sourceforge.plantuml.decoration.LinkType;
@@ -56,6 +58,7 @@ import net.sourceforge.plantuml.klimt.creole.CreoleMode;
 import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.klimt.font.FontParam;
 import net.sourceforge.plantuml.plasma.Quark;
+import net.sourceforge.plantuml.project.Failable;
 import net.sourceforge.plantuml.regex.IRegex;
 import net.sourceforge.plantuml.regex.RegexConcat;
 import net.sourceforge.plantuml.regex.RegexLeaf;
@@ -71,6 +74,7 @@ import net.sourceforge.plantuml.url.Url;
 import net.sourceforge.plantuml.url.UrlBuilder;
 import net.sourceforge.plantuml.url.UrlMode;
 import net.sourceforge.plantuml.utils.BlocLines;
+import net.sourceforge.plantuml.utils.LineLocation;
 
 public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagram> {
 
@@ -97,21 +101,7 @@ public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagra
 				new RegexLeaf("TYPE",
 						"(interface|enum|annotation|abstract[%s]+class|static[%s]+class|abstract|class|entity|protocol|struct|exception|metaclass|stereotype)"), //
 				RegexLeaf.spaceOneOrMore(), //
-				new RegexOr(//
-						new RegexConcat(//
-								new RegexLeaf("DISPLAY1", CommandCreateClass.DISPLAY_WITH_GENERIC), //
-								RegexLeaf.spaceOneOrMore(), //
-								new RegexLeaf("as"), //
-								RegexLeaf.spaceOneOrMore(), //
-								new RegexLeaf("CODE1", "(" + CommandCreateClass.CODE + ")")), //
-						new RegexConcat(//
-								new RegexLeaf("CODE2", "(" + CommandCreateClass.CODE + ")"), //
-								RegexLeaf.spaceOneOrMore(), //
-								new RegexLeaf("as"), //
-								RegexLeaf.spaceOneOrMore(), //
-								new RegexLeaf("DISPLAY2", CommandCreateClass.DISPLAY_WITH_GENERIC)), //
-						new RegexLeaf("CODE3", "(" + CommandCreateClass.CODE + ")"), //
-						new RegexLeaf("CODE4", "[%g]([^%g]+)[%g]")), //
+				NameAndCodeParser.nameAndCodeForClassWithGeneric(), //
 				new RegexOptional(new RegexConcat(RegexLeaf.spaceZeroOrMore(),
 						new RegexLeaf("GENERIC", "\\<(" + GenericRegexProducer.PATTERN + ")\\>"))), //
 				RegexLeaf.spaceZeroOrMore(), //
@@ -127,10 +117,16 @@ public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagra
 						new RegexLeaf("LINECOLOR", "(?:\\[(dotted|dashed|bold)\\])?(\\w+)?"))), //
 				new RegexOptional(new RegexConcat(RegexLeaf.spaceOneOrMore(),
 						new RegexLeaf("EXTENDS",
-								"(extends)[%s]+(" + CommandCreateClassMultilines.CODES + "|[%g]([^%g]+)[%g])"))), //
+								"(extends)[%s]+(" + CommandCreateClassMultilines.CODES + "|[%g]([^%g]+)[%g])"),
+						new RegexOptional(new RegexConcat(RegexLeaf.spaceZeroOrMore(),
+								new RegexLeaf("\\<(" + GenericRegexProducer.PATTERN + ")\\>"))) //
+				)), //
 				new RegexOptional(new RegexConcat(RegexLeaf.spaceOneOrMore(),
 						new RegexLeaf("IMPLEMENTS",
-								"(implements)[%s]+(" + CommandCreateClassMultilines.CODES + "|[%g]([^%g]+)[%g])"))), //
+								"(implements)[%s]+(" + CommandCreateClassMultilines.CODES + "|[%g]([^%g]+)[%g])"),
+						new RegexOptional(new RegexConcat(RegexLeaf.spaceZeroOrMore(),
+								new RegexLeaf("\\<(" + GenericRegexProducer.PATTERN + ")\\>"))) //
+				)), //
 				RegexLeaf.spaceZeroOrMore(), //
 				new RegexLeaf("\\{"), //
 				RegexLeaf.spaceZeroOrMore(), //
@@ -148,7 +144,8 @@ public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagra
 	}
 
 	@Override
-	protected CommandExecutionResult executeNow(ClassDiagram diagram, BlocLines lines) throws NoSuchColorException {
+	protected CommandExecutionResult executeNow(ClassDiagram diagram, BlocLines lines, ParserPass currentPass)
+			throws NoSuchColorException {
 		lines = lines.trimSmart(1);
 		final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
 		final String typeString = StringUtils.goUpperCase(line0.get("TYPE", 0));
@@ -166,22 +163,25 @@ public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagra
 
 		final String stereotype = line0.get("STEREO", 0);
 
-		final Quark<Entity> quark = diagram.quarkInContext(false, idShort);
+		final Failable<Quark<Entity>> quark = diagram.quarkInContextSafe(false, idShort);
+		if (quark.isFail())
+			return CommandExecutionResult.error(quark.getError());
 
-		Entity entity = quark.getData();
+		Entity entity = quark.get().getData();
 
-		Display display = Display.getWithNewlines(displayString);
+		Display display = Display.getWithNewlines(diagram.getPragma(), displayString);
 		if (entity == null) {
 			if (Display.isNull(display))
-				display = Display.getWithNewlines(quark.getName()).withCreoleMode(CreoleMode.SIMPLE_LINE);
-			entity = diagram.reallyCreateLeaf(quark, display, type, null);
+				display = Display.getWithNewlines(diagram.getPragma(), quark.get().getName())
+						.withCreoleMode(CreoleMode.SIMPLE_LINE);
+			entity = diagram.reallyCreateLeaf(lines.getLocation(), quark.get(), display, type, null);
 		} else {
 			if (entity.muteToType(type, null) == false)
 				return CommandExecutionResult.error("Cannot create " + idShort + " because it already exists");
 			if (Display.isNull(display) == false)
 				entity.setDisplay(display);
 		}
-		final CommandExecutionResult check1 = diagram.checkIfPackageHierarchyIfOk(entity);
+		final CommandExecutionResult check1 = diagram.checkIfPackageHierarchyIsOk(entity);
 		if (check1.isOk() == false)
 			return check1;
 
@@ -221,7 +221,7 @@ public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagra
 			entity.setStatic(true);
 
 		if (lines.size() > 1) {
-			entity.setCodeLine(lines.getAt(0).getLocation());
+			// entity.setCodeLine(lines.getAt(0).getLocation());
 			lines = lines.subExtract(1, 1);
 			// final Url url = null;
 			// if (lines.size() > 0) {
@@ -245,8 +245,8 @@ public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagra
 //			}
 		}
 
-		manageExtends("EXTENDS", diagram, line0, entity);
-		manageExtends("IMPLEMENTS", diagram, line0, entity);
+		manageExtends(lines.getLocation(), "EXTENDS", diagram, line0, entity);
+		manageExtends(lines.getLocation(), "IMPLEMENTS", diagram, line0, entity);
 		addTags(entity, line0.getLazzy("TAGS", 0));
 
 		return CommandExecutionResult.ok();
@@ -263,7 +263,8 @@ public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagra
 		}
 	}
 
-	public static void manageExtends(String keyword, ClassDiagram diagram, RegexResult arg, final Entity entity) {
+	public static void manageExtends(LineLocation location, String keyword, ClassDiagram diagram, RegexResult arg,
+			final Entity entity) {
 		if (arg.get(keyword, 0) != null) {
 			final Mode mode = arg.get(keyword, 0).equalsIgnoreCase("extends") ? Mode.EXTENDS : Mode.IMPLEMENTS;
 			LeafType type2 = LeafType.CLASS;
@@ -280,22 +281,23 @@ public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagra
 				final Quark<Entity> quark = diagram.quarkInContext(false, diagram.cleanId(idShort));
 				Entity cl2 = quark.getData();
 				if (cl2 == null)
-					cl2 = diagram.reallyCreateLeaf(quark, Display.getWithNewlines(quark.getName()), type2, null);
+					cl2 = diagram.reallyCreateLeaf(location, quark,
+							Display.getWithNewlines(diagram.getPragma(), quark.getName()), type2, null);
 
 				LinkType typeLink = new LinkType(LinkDecor.NONE, LinkDecor.EXTENDS);
 				if (type2 == LeafType.INTERFACE && entity.getLeafType() != LeafType.INTERFACE)
 					typeLink = typeLink.goDashed();
 
 				final LinkArg linkArg = LinkArg.noDisplay(2);
-				final Link link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(),
-						cl2, entity, typeLink, linkArg.withQuantifier(null, null)
-								.withDistanceAngle(diagram.getLabeldistance(), diagram.getLabelangle()));
+				final Link link = new Link(location, diagram, diagram.getSkinParam().getCurrentStyleBuilder(), cl2, entity,
+						typeLink, linkArg.withQuantifier(null, null).withDistanceAngle(diagram.getLabeldistance(),
+								diagram.getLabelangle()));
 				diagram.addLink(link);
 			}
 		}
 	}
 
-	private Entity executeArg0(ClassDiagram diagram, RegexResult line0) throws NoSuchColorException {
+	private Entity executeArg0(LineLocation location, ClassDiagram diagram, RegexResult line0) throws NoSuchColorException {
 
 		final String typeString = StringUtils.goUpperCase(line0.get("TYPE", 0));
 		final LeafType type = LeafType.getLeafType(typeString);
@@ -314,14 +316,15 @@ public class CommandCreateClassMultilines extends CommandMultilines2<ClassDiagra
 
 		final Quark<Entity> quark = diagram.quarkInContext(false, idShort);
 
-		Display display = Display.getWithNewlines(displayString);
+		Display display = Display.getWithNewlines(diagram.getPragma(), displayString);
 		if (Display.isNull(display))
-			display = Display.getWithNewlines(quark.getName()).withCreoleMode(CreoleMode.SIMPLE_LINE);
+			display = Display.getWithNewlines(diagram.getPragma(), quark.getName())
+					.withCreoleMode(CreoleMode.SIMPLE_LINE);
 
 		Entity entity = quark.getData();
 
 		if (entity == null) {
-			entity = diagram.reallyCreateLeaf(quark, display, type, null);
+			entity = diagram.reallyCreateLeaf(location, quark, display, type, null);
 		} else {
 //			if (entity.muteToType(type, null) == false)
 //				return null;

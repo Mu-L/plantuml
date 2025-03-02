@@ -1,10 +1,14 @@
-''
-'' A green on black theme based on monochrome CRT monitors
-''
-'' (The colors came from https://superuser.com/a/1206781)
-''
-'' Original Author: Matthew Leather
-''
+---
+name: crt-green
+display_name: Cathode-ray tube (CRT) green
+description: A green on black theme based on monochrome CRT monitors
+author: Matthew Leather
+release: 
+license: 
+version: 
+source: 
+inspiration: https://superuser.com/a/1206781
+---
 
 !$THEME = "crt-green"
 

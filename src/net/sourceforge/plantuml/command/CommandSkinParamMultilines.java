@@ -63,8 +63,10 @@ public class CommandSkinParamMultilines extends CommandMultilinesBracket<TitledD
 		return MyPattern.mtches(line, CommandMultilinesComment.COMMENT_SINGLE_LINE);
 	}
 
-	public CommandExecutionResult execute(TitledDiagram diagram, BlocLines lines) {
+	public CommandExecutionResult execute(TitledDiagram diagram, BlocLines lines, ParserPass currentPass) {
 		final SkinLoader skinLoader = new SkinLoader(diagram);
+		
+		lines = lines.expandsNewline(true);
 
 		final Matcher2 mStart = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
 		if (mStart.find() == false)
@@ -75,5 +77,12 @@ public class CommandSkinParamMultilines extends CommandMultilinesBracket<TitledD
 		return skinLoader.execute(lines, group1);
 
 	}
+
+	@Override
+	public boolean isEligibleFor(ParserPass pass) {
+		return pass == ParserPass.ONE;
+	}
+
+
 
 }

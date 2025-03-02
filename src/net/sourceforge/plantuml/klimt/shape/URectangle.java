@@ -53,8 +53,8 @@ public class URectangle extends AbstractShadowable implements UShapeSized, UShap
 	private final double height;
 	private final double rx;
 	private final double ry;
-	private final String comment;
-	private final String codeLine;
+	private final String comment = null;
+	private final String codeLine = null;
 	private final boolean ignoreForCompressionOnX;
 	private final boolean ignoreForCompressionOnY;
 
@@ -118,6 +118,21 @@ public class URectangle extends AbstractShadowable implements UShapeSized, UShap
 		return build(dim.getWidth(), dim.getHeight());
 	}
 
+	public Shadowable halfRounded(double roundCorner) {
+		if (roundCorner == 0)
+			return this;
+
+		final UPath path = UPath.none();
+		path.moveTo(roundCorner / 2, 0);
+		path.lineTo(width - roundCorner / 2, 0);
+		path.arcTo(roundCorner / 2, roundCorner / 2, 0, 0, 1, width, roundCorner / 2);
+		path.lineTo(width, height);
+		path.lineTo(0, height);
+		path.lineTo(0, roundCorner / 2);
+		path.arcTo(roundCorner / 2, roundCorner / 2, 0, 0, 1, roundCorner / 2, 0);
+		return path;
+	}
+
 	private URectangle(double width, double height, double rx, double ry, String comment,
 			boolean ignoreForCompressionOnX, boolean ignoreForCompressionOnY, String codeLine) {
 		if (height == 0)
@@ -128,8 +143,8 @@ public class URectangle extends AbstractShadowable implements UShapeSized, UShap
 
 		this.ignoreForCompressionOnX = ignoreForCompressionOnX;
 		this.ignoreForCompressionOnY = ignoreForCompressionOnY;
-		this.comment = comment;
-		this.codeLine = codeLine;
+		// this.comment = comment;
+		// this.codeLine = codeLine;
 		this.width = width;
 		this.height = height;
 		this.rx = rx;
@@ -165,13 +180,13 @@ public class URectangle extends AbstractShadowable implements UShapeSized, UShap
 		return MinMax.fromMax(width, height);
 	}
 
-	public final String getComment() {
-		return comment;
-	}
-
-	public String getCodeLine() {
-		return codeLine;
-	}
+//	public final String getComment() {
+//		return comment;
+//	}
+//
+//	public String getCodeLine() {
+//		return codeLine;
+//	}
 
 	public void drawWhenCompressed(UGraphic ug, CompressionMode mode) {
 		if (mode == CompressionMode.ON_X) {

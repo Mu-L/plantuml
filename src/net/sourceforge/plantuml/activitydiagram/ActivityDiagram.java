@@ -5,12 +5,12 @@
  * (C) Copyright 2009-2024, Arnaud Roques
  *
  * Project Info:  https://plantuml.com
- * 
+ *
  * If you like this project or if you find it useful, you can support us at:
- * 
+ *
  * https://plantuml.com/patreon (only 1$ per month!)
  * https://plantuml.com/paypal
- * 
+ *
  * This file is part of PlantUML.
  *
  * PlantUML is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@ package net.sourceforge.plantuml.activitydiagram;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import net.atmp.CucaDiagram;
+import net.sourceforge.plantuml.Previous;
 import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.GroupType;
 import net.sourceforge.plantuml.abel.LeafType;
@@ -48,8 +48,10 @@ import net.sourceforge.plantuml.core.DiagramDescription;
 import net.sourceforge.plantuml.core.UmlSource;
 import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.plasma.Quark;
+import net.sourceforge.plantuml.preproc.PreprocessingArtifact;
 import net.sourceforge.plantuml.skin.UmlDiagramType;
 import net.sourceforge.plantuml.utils.Direction;
+import net.sourceforge.plantuml.utils.LineLocation;
 
 public class ActivityDiagram extends CucaDiagram {
 
@@ -57,19 +59,19 @@ public class ActivityDiagram extends CucaDiagram {
 	private Entity lastEntityBrancheConsulted;
 	private ConditionalContext currentContext;
 
-	public ActivityDiagram(UmlSource source, Map<String, String> skinParam) {
-		super(source, UmlDiagramType.ACTIVITY, skinParam);
+	public ActivityDiagram(UmlSource source, Previous previous, PreprocessingArtifact preprocessing) {
+		super(source, UmlDiagramType.ACTIVITY, previous, preprocessing);
 		setNamespaceSeparator(null);
 	}
 
 	private String getAutoBranch() {
-		return "#" + this.getUniqueSequence();
+		return this.getUniqueSequence("#");
 	}
 
-	public void startIf(String optionalCodeString) {
+	public void startIf(LineLocation location, String optionalCodeString) {
 		final String idShort = optionalCodeString == null ? getAutoBranch() : optionalCodeString;
 		final Quark<Entity> quark = quarkInContext(true, cleanId(idShort));
-		final Entity br = reallyCreateLeaf(quark, Display.create(""), LeafType.BRANCH, null);
+		final Entity br = reallyCreateLeaf(location, quark, Display.create(""), LeafType.BRANCH, null);
 		currentContext = new ConditionalContext(currentContext, br, Direction.DOWN);
 	}
 
@@ -77,19 +79,19 @@ public class ActivityDiagram extends CucaDiagram {
 		currentContext = currentContext.getParent();
 	}
 
-	public Entity getStart() {
+	public Entity getStart(LineLocation location) {
 		final Quark<Entity> quark = quarkInContext(true, "start");
 		if (quark.getData() == null)
-			reallyCreateLeaf(quark, Display.getWithNewlines("start"), LeafType.CIRCLE_START, null);
+			reallyCreateLeaf(location, quark, Display.getWithNewlines(getPragma(), "start"), LeafType.CIRCLE_START, null);
 
 		return quark.getData();
 	}
 
-	public Entity getEnd(String suppId) {
+	public Entity getEnd(LineLocation location, String suppId) {
 		final String tmp = suppId == null ? "end" : "end$" + suppId;
 		final Quark<Entity> quark = quarkInContext(true, tmp);
 		if (quark.getData() == null)
-			reallyCreateLeaf(quark, Display.getWithNewlines("end"), LeafType.CIRCLE_END, null);
+			reallyCreateLeaf(location, quark, Display.getWithNewlines(getPragma(), "end"), LeafType.CIRCLE_END, null);
 
 		return quark.getData();
 	}
@@ -106,8 +108,8 @@ public class ActivityDiagram extends CucaDiagram {
 
 	}
 
-	public Entity createNote(Quark<Entity> idNewLong, String code__, Display display) {
-		return reallyCreateLeaf(Objects.requireNonNull(idNewLong), display, LeafType.NOTE, null);
+	public Entity createNote(LineLocation location, Quark<Entity> idNewLong, String code__, Display display) {
+		return reallyCreateLeaf(location, Objects.requireNonNull(idNewLong), display, LeafType.NOTE, null);
 	}
 
 	final protected List<String> getDotStrings() {
@@ -116,7 +118,7 @@ public class ActivityDiagram extends CucaDiagram {
 	}
 
 	public DiagramDescription getDescription() {
-		return new DiagramDescription("(" + getEntityFactory().leafs().size() + " activities)");
+		return new DiagramDescription("(" + this.leafs().size() + " activities)");
 	}
 
 	public Entity getLastEntityConsulted() {
@@ -137,12 +139,12 @@ public class ActivityDiagram extends CucaDiagram {
 		this.lastEntityConsulted = lastEntityConsulted;
 	}
 
-	public Entity createInnerActivity() {
+	public Entity createInnerActivity(LineLocation location) {
 
-		final String idShort = "##" + this.getUniqueSequence();
+		final String idShort = this.getUniqueSequence("##");
 
 		final Quark<Entity> quark = quarkInContext(true, idShort);
-		gotoGroup(quark, Display.getWithNewlines(quark.getName()), GroupType.INNER_ACTIVITY);
+		gotoGroup(location, quark, Display.getWithNewlines(getPragma(), quark.getName()), GroupType.INNER_ACTIVITY);
 		final Entity g = getCurrentGroup();
 
 		lastEntityConsulted = null;
@@ -151,17 +153,17 @@ public class ActivityDiagram extends CucaDiagram {
 		return g;
 	}
 
-	public void concurrentActivity(String name) {
+	public void concurrentActivity(LineLocation location, String name) {
 		if (getCurrentGroup().getGroupType() == GroupType.CONCURRENT_ACTIVITY)
 			endGroup();
 
-		final String idShort = "##" + this.getUniqueSequence();
+		final String idShort = this.getUniqueSequence("##");
 
 		if (getCurrentGroup().getGroupType() != GroupType.INNER_ACTIVITY)
 			throw new IllegalStateException("type=" + getCurrentGroup().getGroupType());
 
 		final Quark<Entity> idNewLong = quarkInContext(true, idShort);
-		gotoGroup(idNewLong, Display.getWithNewlines("code"), GroupType.CONCURRENT_ACTIVITY);
+		gotoGroup(location, idNewLong, Display.getWithNewlines(getPragma(), "code"), GroupType.CONCURRENT_ACTIVITY);
 		lastEntityConsulted = null;
 		lastEntityBrancheConsulted = null;
 	}

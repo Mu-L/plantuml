@@ -35,6 +35,8 @@
  */
 package net.sourceforge.plantuml.sequencediagram;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -53,9 +55,10 @@ import net.sourceforge.plantuml.style.StyleSignature;
 import net.sourceforge.plantuml.style.StyleSignatureBasic;
 import net.sourceforge.plantuml.style.WithStyle;
 import net.sourceforge.plantuml.url.Url;
+import net.sourceforge.plantuml.utils.LineLocation;
 
+	// ::remove folder when __HAXE__
 public class Participant implements SpecificBackcolorable, WithStyle {
-    // ::remove folder when __HAXE__
 
 	private final String code;
 	private Display display;
@@ -68,6 +71,7 @@ public class Participant implements SpecificBackcolorable, WithStyle {
 	private final Set<EntityPortion> hiddenPortions;
 	private final int order;
 	private final StyleBuilder styleBuilder;
+	private final LineLocation location;
 
 	// private Style style;
 
@@ -87,8 +91,9 @@ public class Participant implements SpecificBackcolorable, WithStyle {
 		return new Style[] { tmp, stereo };
 	}
 
-	public Participant(ParticipantType type, String code, Display display, Set<EntityPortion> hiddenPortions, int order,
-			StyleBuilder styleBuilder) {
+	public Participant(LineLocation location, ParticipantType type, String code, Display display,
+			Set<EntityPortion> hiddenPortions, int order, StyleBuilder styleBuilder) {
+		this.location = location;
 		this.hiddenPortions = hiddenPortions;
 		this.styleBuilder = styleBuilder;
 		this.order = order;
@@ -140,15 +145,15 @@ public class Participant implements SpecificBackcolorable, WithStyle {
 		return initialLife;
 	}
 
-	private Fashion liveBackcolors;
+	private List<Fashion> liveBackcolors = new ArrayList<>();
 
 	public final void incInitialLife(Fashion colors) {
 		initialLife++;
-		this.liveBackcolors = colors;
+		this.liveBackcolors.add(colors);
 	}
 
-	public Fashion getLiveSpecificBackColors() {
-		return liveBackcolors;
+	public Fashion getLiveSpecificBackColors(int which) {
+		return liveBackcolors.get(which);
 	}
 
 	public Colors getColors() {
@@ -183,6 +188,10 @@ public class Participant implements SpecificBackcolorable, WithStyle {
 
 	public int getOrder() {
 		return order;
+	}
+
+	public LineLocation getLocation() {
+		return location;
 	}
 
 }

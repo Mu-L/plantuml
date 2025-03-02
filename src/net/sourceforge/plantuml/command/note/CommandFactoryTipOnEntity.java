@@ -45,6 +45,8 @@ import net.sourceforge.plantuml.command.Command;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
 import net.sourceforge.plantuml.command.CommandMultilines2;
 import net.sourceforge.plantuml.command.MultilinesStrategy;
+import net.sourceforge.plantuml.command.NameAndCodeParser;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.Trim;
 import net.sourceforge.plantuml.decoration.LinkDecor;
 import net.sourceforge.plantuml.decoration.LinkType;
@@ -54,7 +56,6 @@ import net.sourceforge.plantuml.klimt.color.Colors;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
 import net.sourceforge.plantuml.klimt.creole.Display;
 import net.sourceforge.plantuml.plasma.Quark;
-import net.sourceforge.plantuml.regex.IRegex;
 import net.sourceforge.plantuml.regex.RegexConcat;
 import net.sourceforge.plantuml.regex.RegexLeaf;
 import net.sourceforge.plantuml.regex.RegexResult;
@@ -66,19 +67,14 @@ import net.sourceforge.plantuml.url.Url;
 import net.sourceforge.plantuml.url.UrlBuilder;
 import net.sourceforge.plantuml.url.UrlMode;
 import net.sourceforge.plantuml.utils.BlocLines;
+import net.sourceforge.plantuml.utils.LineLocation;
 import net.sourceforge.plantuml.utils.Position;
 
 public final class CommandFactoryTipOnEntity implements SingleMultiFactoryCommand<AbstractEntityDiagram> {
 
-	private final IRegex partialPattern;
-	private final String key;
+	private final String key = "a";
 
-	public CommandFactoryTipOnEntity(String key, IRegex partialPattern) {
-		this.partialPattern = partialPattern;
-		this.key = key;
-	}
-
-	private RegexConcat getRegexConcatMultiLine(IRegex partialPattern, final boolean withBracket) {
+	private RegexConcat getRegexConcatMultiLine(final boolean withBracket) {
 		if (withBracket) {
 			return RegexConcat.build(CommandFactoryTipOnEntity.class.getName() + key + withBracket, RegexLeaf.start(), //
 					new RegexLeaf("note"), //
@@ -87,7 +83,7 @@ public final class CommandFactoryTipOnEntity implements SingleMultiFactoryComman
 					RegexLeaf.spaceOneOrMore(), //
 					new RegexLeaf("of"), //
 					RegexLeaf.spaceOneOrMore(), //
-					partialPattern, //
+					NameAndCodeParser.codeWithMemberForClass(), //
 					RegexLeaf.spaceZeroOrMore(), //
 					new RegexLeaf("TAGS1", Stereotag.pattern() + "?"), //
 					StereotypePattern.optional("STEREO"), //
@@ -108,7 +104,7 @@ public final class CommandFactoryTipOnEntity implements SingleMultiFactoryComman
 				RegexLeaf.spaceOneOrMore(), //
 				new RegexLeaf("of"), //
 				RegexLeaf.spaceOneOrMore(), //
-				partialPattern, //
+				NameAndCodeParser.codeWithMemberForClass(), //
 				RegexLeaf.spaceZeroOrMore(), //
 				new RegexLeaf("TAGS1", Stereotag.pattern() + "?"), //
 				StereotypePattern.optional("STEREO"), //
@@ -130,7 +126,7 @@ public final class CommandFactoryTipOnEntity implements SingleMultiFactoryComman
 	}
 
 	public Command<AbstractEntityDiagram> createMultiLine(final boolean withBracket) {
-		return new CommandMultilines2<AbstractEntityDiagram>(getRegexConcatMultiLine(partialPattern, withBracket),
+		return new CommandMultilines2<AbstractEntityDiagram>(getRegexConcatMultiLine(withBracket),
 				MultilinesStrategy.KEEP_STARTING_QUOTE, Trim.BOTH) {
 
 			@Override
@@ -141,12 +137,14 @@ public final class CommandFactoryTipOnEntity implements SingleMultiFactoryComman
 				return "^[%s]*(end[%s]?note)$";
 			}
 
-			protected CommandExecutionResult executeNow(final AbstractEntityDiagram system, BlocLines lines)
-					throws NoSuchColorException {
+			@Override
+			protected CommandExecutionResult executeNow(final AbstractEntityDiagram system, BlocLines lines,
+					ParserPass currentPass) throws NoSuchColorException {
 				// StringUtils.trim(lines, false);
 				final RegexResult line0 = getStartingPattern().matcher(lines.getFirst().getTrimmed().getString());
-				lines = lines.subExtract(1, 1);
+				lines = lines.subExtract(1, 1).expandsNewline(false);
 				lines = lines.removeEmptyColumns();
+				final Display display = lines.toDisplay();
 
 				Url url = null;
 				if (line0.get("URL", 0) != null) {
@@ -155,18 +153,18 @@ public final class CommandFactoryTipOnEntity implements SingleMultiFactoryComman
 					url = urlBuilder.getUrl(line0.get("URL", 0));
 				}
 
-				return executeInternal(line0, system, url, lines);
+				return executeInternal(lines.getLocation(), line0, system, url, display);
 			}
 		};
 	}
 
-	private CommandExecutionResult executeInternal(RegexResult line0, AbstractEntityDiagram diagram, Url url,
-			BlocLines lines) throws NoSuchColorException {
+	private CommandExecutionResult executeInternal(LineLocation location, RegexResult line0, AbstractEntityDiagram diagram, Url url,
+			Display display) throws NoSuchColorException {
 
 		final String pos = line0.get("POSITION", 0);
 
-		final String idShort = line0.get("ENTITY", 0);
-		final String member = StringUtils.eventuallyRemoveStartingAndEndingDoubleQuote(line0.get("ENTITY", 1));
+		final String idShort = line0.get("CODE", 0);
+		final String member = StringUtils.eventuallyRemoveStartingAndEndingDoubleQuote(line0.get("CODE", 1));
 
 		final Quark<Entity> quark = diagram.quarkInContext(true, idShort);
 		final Entity cl1 = quark.getData();
@@ -181,19 +179,20 @@ public final class CommandFactoryTipOnEntity implements SingleMultiFactoryComman
 		Entity tips = identTip.getData();
 
 		if (tips == null) {
-			tips = diagram.reallyCreateLeaf(identTip, Display.getWithNewlines(""), LeafType.TIPS, null);
+			tips = diagram.reallyCreateLeaf(location, identTip, Display.getWithNewlines(diagram.getPragma(), ""), LeafType.TIPS,
+					null);
 			final LinkType type = new LinkType(LinkDecor.NONE, LinkDecor.NONE).getInvisible();
 			final Link link;
 			if (position == Position.RIGHT)
-				link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(), cl1,
-						(Entity) tips, type, LinkArg.noDisplay(1));
+				link = new Link(location, diagram, diagram.getSkinParam().getCurrentStyleBuilder(), cl1, tips, type,
+						LinkArg.noDisplay(1));
 			else
-				link = new Link(diagram.getEntityFactory(), diagram.getSkinParam().getCurrentStyleBuilder(),
-						(Entity) tips, cl1, type, LinkArg.noDisplay(1));
+				link = new Link(location, diagram, diagram.getSkinParam().getCurrentStyleBuilder(), tips, cl1, type,
+						LinkArg.noDisplay(1));
 
 			diagram.addLink(link);
 		}
-		tips.putTip(member, lines.toDisplay());
+		tips.putTip(member, display);
 
 		Colors colors = color().getColor(line0, diagram.getSkinParam().getIHtmlColorSet());
 

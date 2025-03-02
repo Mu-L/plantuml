@@ -225,20 +225,23 @@ public class SURL {
 			// In SANDBOX, we cannot read any URL
 			return false;
 
-		if (SecurityUtils.getSecurityProfile() == SecurityProfile.LEGACY)
-			return true;
-
-		if (SecurityUtils.getSecurityProfile() == SecurityProfile.UNSECURE)
-			// We are UNSECURE anyway
-			return true;
-
 		if (isInUrlAllowList())
 			// ::done
 			return true;
 		// ::comment when __CORE__
 
+		if (SecurityUtils.getSecurityProfile() == SecurityProfile.LEGACY) {
+			if (URLCheck.isURLforbidden(cleanPath(internal.toString())))
+				return false;
+			return true;
+		}
+
+		if (SecurityUtils.getSecurityProfile() == SecurityProfile.UNSECURE)
+			// We are UNSECURE anyway
+			return true;
+
 		if (SecurityUtils.getSecurityProfile() == SecurityProfile.INTERNET) {
-			if (forbiddenURL(cleanPath(internal.toString())))
+			if (URLCheck.isURLforbidden(cleanPath(internal.toString())))
 				return false;
 
 			final int port = internal.getPort();
@@ -293,21 +296,6 @@ public class SURL {
 	@Override
 	public String toString() {
 		return internal.toString();
-	}
-
-	private boolean forbiddenURL(String full) {
-		// Thanks to Agasthya Kasturi
-		if (full.contains("@"))
-			return true;
-		if (full.startsWith("https://") == false && full.startsWith("http://") == false)
-			return true;
-		if (full.matches("^https?://[-#.0-9:\\[\\]+]+/.*"))
-			return true;
-		if (full.matches("^https?://[^.]+/.*"))
-			return true;
-		if (full.matches("^https?://[^.]+$"))
-			return true;
-		return false;
 	}
 
 	private boolean isInUrlAllowList() {
@@ -459,6 +447,29 @@ public class SURL {
 		}
 	}
 
+    /**
+     * Configures the specified {@link URLConnection} with security-related settings.
+     * <p>
+     * This method disables user interactions for the connection and, if the connection 
+     * is an instance of {@link HttpURLConnection}, it also disables automatic 
+     * following of HTTP redirects, unless the security profile is set to 
+     * {@link SecurityProfile#UNSECURE}.
+     * </p>
+     *
+     * @param connection the {@link URLConnection} to be configured
+     *
+     * @see URLConnection#setAllowUserInteraction(boolean)
+     * @see HttpURLConnection#setInstanceFollowRedirects(boolean)
+     * @see SecurityUtils#getSecurityProfile()
+     * @see SecurityProfile
+     */
+	protected static void configure(URLConnection connection) {
+		connection.setAllowUserInteraction(false);
+
+		if (SecurityUtils.getSecurityProfile() != SecurityProfile.UNSECURE && connection instanceof HttpURLConnection)
+			((HttpURLConnection) connection).setInstanceFollowRedirects(false);
+	}
+
 	/**
 	 * Creates a GET request and response handler
 	 *
@@ -477,6 +488,7 @@ public class SURL {
 				final URLConnection connection = proxy == null ? url.openConnection() : url.openConnection(proxy);
 				if (connection == null)
 					return null;
+				configure(connection);
 
 				final HttpURLConnection http = (HttpURLConnection) connection;
 
@@ -486,14 +498,14 @@ public class SURL {
 			}
 
 			public byte[] call() throws IOException, URISyntaxException {
-				HttpURLConnection http = openConnection(url);
-				final int responseCode = http.getResponseCode();
+				final HttpURLConnection http = openConnection(url);
+				// final int responseCode = http.getResponseCode();
 
-				if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP
-						|| responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
-					final String newUrl = http.getHeaderField("Location");
-					http = openConnection(new URI(newUrl).toURL());
-				}
+//				if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP
+//						|| responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
+//					final String newUrl = http.getHeaderField("Location");
+//					http = openConnection(new URI(newUrl).toURL());
+//				}
 
 				return retrieveResponseAsBytes(http);
 			}
@@ -521,6 +533,7 @@ public class SURL {
 				if (connection == null)
 					return null;
 
+				configure(connection);
 				final boolean withContent = StringUtils.isNotEmpty(data);
 
 				final HttpURLConnection http = (HttpURLConnection) connection;

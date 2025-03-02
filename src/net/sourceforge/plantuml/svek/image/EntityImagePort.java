@@ -39,6 +39,7 @@ package net.sourceforge.plantuml.svek.image;
 import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.EntityPosition;
 import net.sourceforge.plantuml.klimt.Shadowable;
+import net.sourceforge.plantuml.klimt.UGroupType;
 import net.sourceforge.plantuml.klimt.UStroke;
 import net.sourceforge.plantuml.klimt.UTranslate;
 import net.sourceforge.plantuml.klimt.color.ColorType;
@@ -50,7 +51,6 @@ import net.sourceforge.plantuml.klimt.geom.XDimension2D;
 import net.sourceforge.plantuml.klimt.geom.XPoint2D;
 import net.sourceforge.plantuml.klimt.shape.TextBlock;
 import net.sourceforge.plantuml.klimt.shape.URectangle;
-import net.sourceforge.plantuml.style.ISkinParam;
 import net.sourceforge.plantuml.style.PName;
 import net.sourceforge.plantuml.style.SName;
 import net.sourceforge.plantuml.style.Style;
@@ -60,18 +60,18 @@ import net.sourceforge.plantuml.svek.Cluster;
 import net.sourceforge.plantuml.svek.ShapeType;
 import net.sourceforge.plantuml.svek.SvekNode;
 
+import java.util.EnumMap;
+import java.util.Map;
+
 public class EntityImagePort extends AbstractEntityImageBorder {
 
-	private final SName sname;
-
-	public EntityImagePort(Entity leaf, ISkinParam skinParam, Cluster parent, Bibliotekon bibliotekon, SName sname) {
-		super(leaf, skinParam, parent, bibliotekon, FontParam.BOUNDARY);
-		this.sname = sname;
+	public EntityImagePort(Entity leaf, Cluster parent, Bibliotekon bibliotekon) {
+		super(leaf, parent, bibliotekon, FontParam.BOUNDARY);
 	}
 
 	@Override
 	protected StyleSignatureBasic getSignature() {
-		return StyleSignatureBasic.of(SName.root, SName.element, sname, SName.port);
+		return StyleSignatureBasic.of(SName.root, SName.element, getStyleName(), SName.port);
 	}
 
 	private boolean upPosition() {
@@ -107,6 +107,16 @@ public class EntityImagePort extends AbstractEntityImageBorder {
 		else
 			y += 2 * EntityPosition.RADIUS;
 
+		final Map<UGroupType, String> typeIDent = new EnumMap<>(UGroupType.class);
+		typeIDent.put(UGroupType.CLASS, "entity");
+		typeIDent.put(UGroupType.ID, "entity_" + getEntity().getName());
+		typeIDent.put(UGroupType.DATA_ENTITY, getEntity().getName());
+		typeIDent.put(UGroupType.DATA_UID, getEntity().getUid());
+		typeIDent.put(UGroupType.DATA_QUALIFIED_NAME, getEntity().getQuark().getQualifiedName());
+		if (getEntity().getLocation() != null)
+			typeIDent.put(UGroupType.DATA_SOURCE_LINE, "" + getEntity().getLocation().getPosition());
+		ug.startGroup(typeIDent);
+
 		desc.drawU(ug.apply(new UTranslate(x, y)));
 
 		final Style style = getStyle();
@@ -124,6 +134,8 @@ public class EntityImagePort extends AbstractEntityImageBorder {
 		ug = ug.apply(getUStroke()).apply(backcolor.bg());
 
 		drawSymbol(ug);
+
+		ug.closeGroup();
 	}
 
 	private UStroke getUStroke() {

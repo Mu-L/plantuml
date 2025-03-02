@@ -37,6 +37,7 @@ package net.sourceforge.plantuml.sequencediagram.command;
 
 import net.sourceforge.plantuml.StringUtils;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.klimt.color.ColorType;
 import net.sourceforge.plantuml.klimt.color.NoSuchColorException;
@@ -83,8 +84,8 @@ public abstract class CommandParticipant extends SingleLineCommand2<SequenceDiag
 	}
 
 	@Override
-	final protected CommandExecutionResult executeArg(SequenceDiagram diagram, LineLocation location, RegexResult arg)
-			throws NoSuchColorException {
+	final protected CommandExecutionResult executeArg(SequenceDiagram diagram, LineLocation location, RegexResult arg,
+			ParserPass currentPass) throws NoSuchColorException {
 		final String code = arg.get("CODE", 0);
 		if (diagram.participantsContainsKey(code)) {
 			diagram.putParticipantInLast(code);
@@ -93,7 +94,8 @@ public abstract class CommandParticipant extends SingleLineCommand2<SequenceDiag
 
 		Display strings = Display.NULL;
 		if (arg.get("FULL", 0) != null)
-			strings = Display.getWithNewlines(arg.get("FULL", 0));
+			strings = Display.getWithNewlines(diagram.getPragma(), arg.get("FULL", 0));
+			// strings = Display.create(arg.get("FULL", 0));
 
 		final String typeString1 = arg.get("TYPE", 0);
 		final String typeCreate1 = arg.get("CREATE", 0);
@@ -111,7 +113,7 @@ public abstract class CommandParticipant extends SingleLineCommand2<SequenceDiag
 		}
 		final String orderString = arg.get("ORDER", 0);
 		final int order = orderString == null ? 0 : Integer.parseInt(orderString);
-		final Participant participant = diagram.createNewParticipant(type, code, strings, order);
+		final Participant participant = diagram.createNewParticipant(location, type, code, strings, order);
 
 		final String stereotype = arg.get("STEREO", 0);
 

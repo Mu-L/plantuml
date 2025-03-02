@@ -38,6 +38,7 @@ package net.sourceforge.plantuml.compositediagram.command;
 import net.sourceforge.plantuml.abel.Entity;
 import net.sourceforge.plantuml.abel.LeafType;
 import net.sourceforge.plantuml.command.CommandExecutionResult;
+import net.sourceforge.plantuml.command.ParserPass;
 import net.sourceforge.plantuml.command.SingleLineCommand2;
 import net.sourceforge.plantuml.compositediagram.CompositeDiagram;
 import net.sourceforge.plantuml.klimt.creole.Display;
@@ -71,7 +72,7 @@ public class CommandCreateBlock extends SingleLineCommand2<CompositeDiagram> {
 	}
 
 	@Override
-	protected CommandExecutionResult executeArg(CompositeDiagram diagram, LineLocation location, RegexResult arg) {
+	protected CommandExecutionResult executeArg(CompositeDiagram diagram, LineLocation location, RegexResult arg, ParserPass currentPass) {
 		String display = arg.get("DISPLAY", 0);
 		final String idShort = arg.get("CODE", 0);
 		final Quark<Entity> quark = diagram.quarkInContext(true, idShort);
@@ -81,7 +82,7 @@ public class CommandCreateBlock extends SingleLineCommand2<CompositeDiagram> {
 		if (quark.getData() != null)
 			return CommandExecutionResult.error("Already exists " + quark.getName());
 
-		final Entity ent = diagram.reallyCreateLeaf(quark, Display.getWithNewlines(quark), LeafType.BLOCK, null);
+		final Entity ent = diagram.reallyCreateLeaf(location, quark, Display.getWithNewlines(quark), LeafType.BLOCK, null);
 
 		return CommandExecutionResult.ok();
 	}
