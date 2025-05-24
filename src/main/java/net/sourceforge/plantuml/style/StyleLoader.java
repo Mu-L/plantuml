@@ -37,9 +37,11 @@ package net.sourceforge.plantuml.style;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.sourceforge.plantuml.FileSystem;
 import net.sourceforge.plantuml.security.SFile;
@@ -49,13 +51,27 @@ import net.sourceforge.plantuml.utils.BlocLines;
 import net.sourceforge.plantuml.utils.LineLocationImpl;
 import net.sourceforge.plantuml.utils.Log;
 
-public class StyleLoader {
-    // ::remove file when __HAXE__
+public final class StyleLoader {
+	// ::remove file when __HAXE__
 
-	private StyleBuilder styleBuilder;
+	private static final Map<String, SoftReference<StyleBuilder>> cache = new ConcurrentHashMap<>();
 
-	public StyleBuilder loadSkin(String filename) throws IOException, StyleParsingException {
-		this.styleBuilder = new StyleBuilder();
+	private StyleLoader() {
+	}
+
+	public static StyleBuilder loadSkin(String filename) throws IOException, StyleParsingException {
+		final SoftReference<StyleBuilder> ref = cache.get(filename);
+		StyleBuilder builder = (ref == null) ? null : ref.get();
+
+		if (builder == null) {
+			builder = loadSkinSlow(filename);
+			cache.put(filename, new SoftReference<>(builder));
+		}
+		return builder.cloneMe();
+	}
+
+	private static StyleBuilder loadSkinSlow(String filename) throws IOException, StyleParsingException {
+		final StyleBuilder styleBuilder = new StyleBuilder();
 
 		final InputStream internalIs = getInputStreamForStyle(filename);
 		if (internalIs == null) {
@@ -63,12 +79,10 @@ public class StyleLoader {
 			throw new NoStyleAvailableException();
 		}
 		final BlocLines lines2 = BlocLines.load(internalIs, new LineLocationImpl(filename, null));
-		loadSkinInternal(lines2);
-		if (this.styleBuilder == null) {
-			Log.error("No .skin file seems to be available");
-			throw new NoStyleAvailableException();
-		}
-		return this.styleBuilder;
+		for (Style newStyle : StyleParser.parse(lines2, styleBuilder))
+			styleBuilder.loadInternal(newStyle.getSignature(), newStyle);
+
+		return styleBuilder;
 	}
 
 	public static InputStream getInputStreamForStyle(String filename) throws IOException {
@@ -102,11 +116,6 @@ public class StyleLoader {
 		}
 		return internalIs;
 		// ::done
-	}
-
-	private void loadSkinInternal(final BlocLines lines) throws StyleParsingException {
-		for (Style newStyle : StyleParser.parse(lines, styleBuilder))
-			this.styleBuilder.loadInternal(newStyle.getSignature(), newStyle);
 	}
 
 	public static final int DELTA_PRIORITY_FOR_STEREOTYPE = 1000;
